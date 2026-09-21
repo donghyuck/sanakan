@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "block",
+        "needs_human_review"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "blocking_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocking",
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "file": {
+            "type": "string"
+          },
+          "line_or_symbol": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "severity",
+          "file",
+          "line_or_symbol",
+          "evidence",
+          "impact",
+          "recommendation"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "baseline": {
+      "type": "string",
+      "pattern": "[0-9a-f]{40}|[0-9a-f]{64}"
+    },
+    "patch_sha256": {
+      "type": "string",
+      "pattern": "[0-9a-f]{64}"
+    }
+  },
+  "required": [
+    "decision",
+    "summary",
+    "blocking_count",
+    "findings",
+    "baseline",
+    "patch_sha256"
+  ],
+  "additionalProperties": false
+}

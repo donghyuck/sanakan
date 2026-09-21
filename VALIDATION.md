@@ -1,0 +1,111 @@
+# 배포본 검증 기록
+
+버전: 1.1.0 · 검증일: 2026-09-21
+
+## 범위
+
+이 기록은 가이드 패키지 자체의 정적 검사·오프라인 회귀 테스트에 한정된다.
+Studio 애플리케이션의 빌드, 실제 모델 호출, GitLab/GitHub Webhook, 토큰·승인 서버,
+Runner 격리, 실제 Push/MR 생성, 운영 DB·배포는 실행하지 않았다.
+게시 스크립트는 의도적으로 실패하는 stub이다. 사용 가능한 무인 게시기로 표시하지 않는다.
+
+## 검증 명령 및 결과
+
+| 명령 | 결과 | 비고 |
+|---|---|---|
+| python3 tools/validate_package.py | 통과 | 링크/JSON/TOML/Python/shell 문법/manifest/checksum |
+| PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v | 20개 통과 | 임시 Git fixture만 사용 |
+| python3 templates/automation/safe_artifacts.py check-schemas | 통과 | 제공 schema subset의 구조 검사 |
+| Ruby Psych YAML parse | 통과 | root GitLab/GitHub 및 consumer CI 예시; 플랫폼 server-side lint 아님 |
+| ZIP integrity / manifest comparison | build_release.py의 필수 생성 후 검사 | 불일치 시 성공 보고하지 않음 |
+
+## 독립 검토
+
+스크립트 작성, Studio 적용 문서 작성, 도구 안전성 검토를 분리했다.
+독립 검토에서 clean filter 실행 경로와 조작된 manifest 통과를 재현했고 두 항목을 수정했다.
+수정 후 필터 marker 미생성·원문 patch 유지 및 manifest 위조 거절을 독립적으로 재확인했다.
+이 검토는 완전한 보안 감사나 운영 환경 인증을 의미하지 않는다.
+
+## 운영 확대 전 남은 검증
+
+- 배포한 Codex 버전·모델·계정·프로젝트 신뢰 설정에 대한 실제 실행.
+- 플랫폼 CI lint, 고정된 Runner image/action의 조직 승인.
+- 승인자·서명·중복 이벤트·상태 저장소·동시성·부분 성공 후 재시도.
+- 보호된 게시기의 별도 코드·권한·토큰 격리 및 최종 commit digest 일치.
+- 소비자 프로젝트의 실제 build·test·DB migration.
+- 공개 배포 권리 및 라이선스 확정.
+
+## Context Usage Report
+
+### Investigation Summary
+
+| Item | Result |
+|---|---|
+| Task type | 검토 완료 가이드의 최종 배포 패키지 제작 |
+| Main target | 정책·검증 도구·자동화 경계·게시 문서 |
+| Strategy | 원본 목록/검토 결과 → 소유 범위별 보완 → 독립 검토 → 오프라인 검증 |
+| Verification boundary | 실제 서비스/모델/게시 권한은 미검증 |
+
+### Search And CodeGraph Usage
+
+| Category | Details |
+|---|---|
+| Search terms | verify, patch, publish, schema, baseline, sandbox |
+| CodeGraph | 문서/스크립트 배포 작업이므로 미사용 |
+| Candidates | 원본 ZIP 29개 항목과 추가 도구/문서 |
+| Selected | 위험 경계가 있는 CI·publisher·verify·schema 및 정책 서식 |
+
+### File Inspection Scope
+
+| File/Area | Read Scope | Reason |
+|---|---|---|
+| 원본 README | Partial | 기존 검토와 목차를 토대로 재구성 |
+| 정책/agent/checklist 서식 | Full | 실제 프로젝트 목적 및 역할 일치 |
+| safe_artifacts/verify/tests | Full | 구현자·독립 리뷰어가 동작 검토 |
+| Studio 코드/설정 | Partial | 문서의 stack/명령 대조만 수행 |
+| 공식 Codex 문서 | Partial | 설정과 권한 전제 확인 |
+
+### Evidence Checked
+
+| Type | Item | Result |
+|---|---|---|
+| Source | 사용자 제공 원문과 검토 결과 | 반영 |
+| Tests | 오프라인 fixture | 위 검증 표 참고 |
+| Output | manifest/sha256/ZIP | 위 검증 표 참고 |
+
+### Files Or Areas Intentionally Not Read
+
+| Area | Reason | Risk |
+|---|---|---|
+| 실제 credential·환경값 | 배포물에 불필요, 노출 방지 | Low |
+| 전체 RAG 앱 구현 | 가이드 적용과 무관 | Low |
+| 운영 CI/권한 설정 | 대상 설치 환경 미확정 | Medium |
+
+### Original Source Verification
+
+| Item | Method | Result |
+|---|---|---|
+| 원문/패키지 | 직접 읽기와 독립 리뷰 | 수행 |
+| 실제 모델/DB/게시 | 실행하지 않음 | Not verified |
+| 로컬 검사 | 실행 명령 기록 | 위 표 참고 |
+
+### Context Efficiency Metrics
+
+| Metric | Count |
+|---|---:|
+| 원본 ZIP 엔트리 | 29 |
+| 위임된 범위 | 3 |
+| 실제 원격 게시 | 0 |
+| 기존 프로젝트 코드 변경 | 0 |
+
+### Final Assessment
+
+| Rule | Result | Comment |
+|---|---|---|
+| Search before reading | Pass | 원본 목록과 이전 검토 재사용 |
+| Narrow candidates | Pass | 정책/도구/문서 소유 범위 분리 |
+| Avoid large reads | Partial | 공식 문서 navigation 일부 포함 |
+| Skipped areas recorded | Pass | 운영 권한/credential 제외 |
+| Verify original/output | Pass | 검사와 독립 검토 |
+
+Conclusion: Context usage was partially controlled. Some files, logs, or diffs may have been read more broadly than necessary.

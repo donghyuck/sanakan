@@ -1,0 +1,11 @@
+# 프로젝트에 맞게 사용자 또는 그룹을 변경하십시오.
+
+/AGENTS.md                         @maintainers
+/.codex/                           @maintainers
+/.gitlab-ci.yml                    @maintainers @security
+/.github/workflows/                @maintainers @security
+/AI_DEVELOPMENT_POLICY.md          @maintainers @security
+/automation/                       @maintainers @security
+/scripts/verify.sh                 @maintainers
+/backend/src/main/**               @backend-team
+/frontend/src/**                   @frontend-team

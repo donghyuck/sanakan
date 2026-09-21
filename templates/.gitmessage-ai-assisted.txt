@@ -1,0 +1,14 @@
+[ai-assisted] <type>(<scope>): <요약>
+
+Issue:
+- 이슈 참조 또는 예외 사유
+
+Why:
+- 변경 이유
+
+What:
+- 변경 범위와 내용
+
+Validation:
+- 실제 명령과 결과
+- 미실행 항목 및 이유

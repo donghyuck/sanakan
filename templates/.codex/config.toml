@@ -1,0 +1,7 @@
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+
+# Example only: merge with the existing project config, do not overwrite it.
+# Model/account support and parent sandbox/approval settings must be verified locally.
+# Do not add agents.dir merely to install these standalone agent files.

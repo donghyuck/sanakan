@@ -1,0 +1,20 @@
+# Consumer-project example, NOT an enabled issue-to-MR implementation pipeline.
+# Copy templates/automation/ into automation/ before opting in.
+# No model execution, API calls, push, or write token belongs in this job.
+# Select and pin a reviewed image in CI; do not overwrite existing CI with this file.
+stages: [validate_reference]
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $ENABLE_CODEX_REFERENCE_CHECK == "true"'
+    - when: never
+
+validate_codex_reference:
+  stage: validate_reference
+  image: ${CODEX_REFERENCE_IMAGE}
+  when: manual
+  allow_failure: false
+  script:
+    - python3 automation/safe_artifacts.py check-schemas
+    - bash -n automation/publish-branch-and-mr.sh
+  # This syntax/schema check does NOT validate an implementation or authorize publication.

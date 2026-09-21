@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": [
+        "implement",
+        "needs_info",
+        "needs_approval",
+        "reject"
+      ]
+    },
+    "risk": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "affected_files": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "test_plan": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "approval_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "prohibited_change_detected": {
+      "type": "boolean"
+    },
+    "baseline": {
+      "type": "string",
+      "pattern": "[0-9a-f]{40}|[0-9a-f]{64}"
+    }
+  },
+  "required": [
+    "decision",
+    "risk",
+    "summary",
+    "reason",
+    "affected_files",
+    "test_plan",
+    "missing_information",
+    "approval_reasons",
+    "prohibited_change_detected",
+    "baseline"
+  ],
+  "additionalProperties": false
+}
