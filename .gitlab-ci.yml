@@ -1,0 +1,13 @@
+# Set GUIDE_VALIDATION_IMAGE to a reviewed digest-pinned Python 3.11+/Git/Bash image.
+# Manual opt-in until the project owner configures the runner image.
+stages: [validate]
+validate_guide:
+  stage: validate
+  image: ${GUIDE_VALIDATION_IMAGE}
+  rules:
+    - if: '$GUIDE_VALIDATION_IMAGE'
+      when: on_success
+    - when: never
+  script:
+    - python3 tools/validate_package.py
+    - PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v

@@ -6,6 +6,7 @@
 02_EXISTING_PROJECT_CHECKLIST.md
 03_SECURITY_CHECKLIST.md
 CHANGELOG.md
+LICENSE
 LICENSE_NOTICE.md
 MANIFEST.txt
 PUBLISHING.md
@@ -36,6 +37,7 @@ templates/automation/schemas/implementation-schema.json
 templates/automation/schemas/manifest-schema.json
 templates/automation/schemas/review-schema.json
 templates/automation/schemas/triage-schema.json
+templates/automation/schemas/verification-policy-schema.json
 templates/automation/schemas/verification-schema.json
 templates/automation/webhook-event-rules.md
 templates/backend/AGENTS.md

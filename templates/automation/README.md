@@ -1,13 +1,13 @@
 # 오프라인 자동화 참조 도구
 
-이 폴더는 **운영 자동화 서비스가 아닌 1.1.0 참조 구현**입니다.
+이 폴더는 **운영 자동화 서비스가 아닌 1.2.0 참조 구현**입니다.
 완성된 Webhook Receiver, 모델 실행기, 승인 서비스, 게시 서비스는 제공하지 않습니다.
 `publish-branch-and-mr.sh`는 항상 종료 코드 2로 실패하며 네트워크/토큰을 사용하지 않습니다.
 
 ## 신뢰 경계
 
 - Python 3.11+, Git, Bash가 필요합니다. 외부 Python 패키지는 필요하지 않습니다.
-- 도구·schema·allowlist·기준 commit은 **worker가 바꿀 수 없는 보호 위치**에서 제공합니다.
+- 도구·schema·allowlist·필수 검증 정책·기준 commit은 **worker가 바꿀 수 없는 보호 위치**에서 제공합니다.
 - worker가 종료된 독립 작업공간에서 수집합니다. 실행 중 동시 변경/악성 파일시스템에 대한 sandbox가 아닙니다.
 - 승인된 저장소와 전체 commit ID를 작업 시작 전에 기록합니다. 작업 후 HEAD를 기준선으로 새로 정하지 않습니다.
 - allowlist는 사람이 승인한 **정확한 상대 파일 경로의 JSON 배열**입니다. 예: `["src/example.py", "tests/test_example.py"]`. 디렉터리/glob 패턴은 지원하지 않습니다.
@@ -54,15 +54,31 @@ HEAD가 달라졌거나 승인 범위 밖 파일이 변경되면 중단합니다
 
 ## 3. 독립 검증과 리뷰
 
-보호된 verifier가 별도 checkout에서 고정 patch를 적용하고 필수 검증을 실행합니다.
+보호된 orchestrator가 승인 baseline의 깨끗한 별도 checkout에 `git apply --index /artifacts/change-001.patch`로 고정 patch를 적용합니다.
+적용 실패 시 중단합니다. verifier는 이 checkout에서 필수 검증을 실행합니다.
+Reviewer는 불변 patch 파일의 SHA-256을 직접 확인하고 이 checkout에서 호출 흐름을 읽습니다.
+worker의 index는 수집기가 변경하지 않으므로 worker의 staged diff를 리뷰 대상으로 사용하지 않습니다.
 검증 job은 프로젝트 코드를 실행하므로 게시 토큰·운영 비밀을 주지 않습니다.
 검증/리뷰를 실행한 정확한 patch SHA-256과 baseline을 각 결과에 기록합니다.
 
 - `triage.json`: 승인된 기준 commit, 예상 파일, low 위험 판정, 정보/승인 누락 없음
 - `implementation.json`: completed, 실제 파일 목록, 검증 결과, 완료 조건별 `acceptance_results`, 미확인/질문/위험 없음
 - `review.json`: 독립 리뷰의 pass, blocking_count 0, blocking/high finding 없음
-- `verification.json`: 신뢰한 runner가 작성한 passed와 실제 명령/종료 코드(모두 0)
+- `verification-policy.json`: 보호된 기준 commit과 필수 검증 ID/정확한 명령 목록
+- `verification.json`: 신뢰한 runner가 작성한 passed와 실제 check_ids/명령/종료 코드(모두 0)
 - 각 파일은 `schemas/`의 필수 필드 및 추가 필드 금지 규칙을 따릅니다.
+
+작업 시작 전에 사람이 승인한 `verification-policy.json`을 worker가 수정할 수 없는 위치에 고정합니다.
+`triage.test_plan`은 제안이며 이 정책을 대체하지 않습니다. runner는 정책의 각 명령을 실행하고
+동일 순서의 `check_ids`, `commands`, `exit_codes`를 기록합니다. 누락·중복·알 수 없는 ID나
+명령 불일치는 실패합니다. 추가 검증도 먼저 정책에 포함해야 합니다.
+
+```json
+{
+  "baseline": "0000000000000000000000000000000000000000",
+  "checks": [{"id": "backend", "command": "bash scripts/verify.sh backend"}]
+}
+```
 
 `verification.json` 예시 형식(해시/명령은 실제 실행값으로 대체):
 
@@ -71,6 +87,7 @@ HEAD가 달라졌거나 승인 범위 밖 파일이 변경되면 중단합니다
   "baseline": "0000000000000000000000000000000000000000",
   "patch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "status": "passed",
+  "check_ids": ["backend"],
   "commands": ["bash scripts/verify.sh backend"],
   "exit_codes": [0]
 }
@@ -94,7 +111,8 @@ python3 /protected/automation/safe_artifacts.py gate \
   --triage /artifacts/triage.json \
   --implementation /artifacts/implementation.json \
   --review /artifacts/review.json \
-  --verification /artifacts/verification.json
+  --verification /artifacts/verification.json \
+  --verification-policy /protected/verification-policy.json
 ```
 
 blocked/failed/no_change, schema 누락/오류, 범위 불일치, 미충족 완료 조건, 검증 실패,

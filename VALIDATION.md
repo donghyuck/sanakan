@@ -1,5 +1,38 @@
 # 배포본 검증 기록
 
+버전: 1.2.0 · 검증일: 2026-09-21
+
+## 수정 및 검증 범위
+
+- 누락된 Git 설정 및 GitHub/GitLab CI 파일을 복원하고 LICENSE를 배포 목록에 포함했다.
+- 수집된 patch와 리뷰 입력을 통일하고, 빈 worker index에서도 독립 checkout에 patch가 적용되는지 검증했다.
+- 보호된 필수 검증 정책을 gate의 필수 입력으로 추가했다. 검증 누락, 명령/ID 불일치,
+  중복 ID, 빈 정책, baseline 불일치 및 정책 파일 누락을 거절하는 회귀 검증을 수행했다.
+- 공통 AGENTS 및 Worker의 승인 조건을 정합화했다. 무인 Low 위험 작업의 별도 제한은 유지한다.
+
+## 검증
+
+- `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v`: 24개 통과.
+- `python3 templates/automation/safe_artifacts.py check-schemas`: 통과.
+- Ruby Psych: GitHub/GitLab CI YAML 문법 파싱 통과. 플랫폼 서버 lint는 미실행.
+- 패키지 무결성 검사: 통과. staged Git tree만 추출한 깨끗한 디렉터리에서도 통과.
+- ZIP 생성 및 무결성 검사: 통과. 정확히 50개 manifest 파일 포함, 로컬 상태 파일 제외.
+  아래는 재검증 명령이다.
+
+```sh
+python3 tools/validate_package.py
+python3 tools/build_release.py --output <패키지-밖의-새-ZIP-경로>
+```
+
+실제 모델/승인 서비스/Webhook/Runner/Push/MR 생성은 미검증이다.
+GitLab CI는 검토된 `GUIDE_VALIDATION_IMAGE` 설정이 필요하다.
+이번 수정은 단일 에이전트가 구현 및 diff 재검토했고 독립 에이전트 리뷰는 수행하지 않았다.
+아래 독립 검토 설명은 1.1.0 제작 당시 기록이며 이번 수정의 검증 근거가 아니다.
+
+---
+
+# 1.1.0 검증 기록 (이전 배포 당시 기록)
+
 버전: 1.1.0 · 검증일: 2026-09-21
 
 ## 범위

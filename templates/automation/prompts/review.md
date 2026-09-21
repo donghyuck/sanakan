@@ -6,9 +6,14 @@
 - .agent/issue.json
 - .agent/triage.json
 - .agent/implementation.json
-- 현재 staged diff (`git diff --cached`)와 관련 호출 흐름
+- 보호된 orchestrator가 전달한 불변 patch 파일과 manifest
+- 같은 baseline에서 그 patch만 적용한 독립 checkout의 관련 호출 흐름
+- 보호된 필수 검증 정책과 독립 runner의 검증 결과
 
-구현자의 설명보다 실제 diff와 실행 흐름을 우선한다.
+patch 파일의 SHA-256을 직접 계산해 전달받은 patch_sha256 및 manifest와 비교한다.
+원본 worker의 staged diff는 리뷰 대상으로 사용하지 않는다. 수집기는 index를 변경하지 않는다.
+checkout 준비는 보호된 orchestrator가 담당하며, Reviewer는 읽기 전용으로 검토한다.
+구현자의 설명보다 실제 patch와 실행 흐름을 우선한다.
 코드를 수정하지 않는다.
 
 검토 항목:

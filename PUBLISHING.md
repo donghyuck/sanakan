@@ -9,6 +9,9 @@
 원격 주소·소유자·라이선스·공개 여부는 사용자가 결정한다. 이 패키지는 원격 저장소를 만들거나 게시하지 않는다.
 GitHub와 GitLab 양쪽에서 Markdown을 읽을 수 있으며 패키지 자체 검증용 CI 예시가 루트에 포함된다.
 
+GitLab에서는 Python 3.11+/Git/Bash를 포함한 검토된 digest 고정 이미지를
+`GUIDE_VALIDATION_IMAGE` 변수에 설정해야 검증 job이 실행된다. GitHub 검증은 push/PR 시 실행된다.
+
 ## 2. 게시 전 확인
 
 - [ ] 가이드 버전/원본 출처/수정 내용을 CHANGELOG에서 확인했다.
@@ -27,13 +30,13 @@ GitHub와 GitLab 양쪽에서 Markdown을 읽을 수 있으며 패키지 자체 
 
 ```sh
 git init -b main
-git add README.md VERSION CHANGELOG.md LICENSE_NOTICE.md PUBLISHING.md VALIDATION.md
+git add README.md VERSION CHANGELOG.md LICENSE LICENSE_NOTICE.md PUBLISHING.md VALIDATION.md
 git add .gitignore .gitattributes .github .gitlab-ci.yml
 git add 01_NEW_PROJECT_CHECKLIST.md 02_EXISTING_PROJECT_CHECKLIST.md 03_SECURITY_CHECKLIST.md
 git add docs examples templates tests tools MANIFEST.txt SHA256SUMS
 git diff --cached --check
 git diff --cached --stat
-git commit -m "[ai-assisted] docs(guide): 개발 운영 가이드 1.1.0 정리"
+git commit -m "[ai-assisted] docs(guide): 개발 운영 가이드 1.2.0 정리"
 git remote add origin <사용자가-확인한-원격-URL>
 git push -u origin main
 ```

@@ -32,6 +32,14 @@
         "type": "integer",
         "minimum": 0
       }
+    },
+    "check_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   },
   "required": [
@@ -39,7 +47,8 @@
     "patch_sha256",
     "status",
     "commands",
-    "exit_codes"
+    "exit_codes",
+    "check_ids"
   ],
   "additionalProperties": false
 }

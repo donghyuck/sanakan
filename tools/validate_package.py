@@ -12,7 +12,7 @@ import sys
 import tomllib
 
 ROOT = Path(__file__).resolve().parent.parent
-IGNORED_DIRS = {".git", "__pycache__"}
+IGNORED_DIRS = {".git", ".omx", "__pycache__"}
 GENERATED = {"MANIFEST.txt", "SHA256SUMS"}
 
 
@@ -25,7 +25,7 @@ def files():
         if path.is_symlink():
             raise ValueError(f"Symlink not allowed: {relative}")
         if path.is_file():
-            if path.suffix == ".pyc":
+            if path.suffix == ".pyc" or path.name == ".DS_Store":
                 continue
             found.append(path)
     return sorted(found, key=lambda path: path.relative_to(ROOT).as_posix())
@@ -35,7 +35,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--refresh", action="store_true", help="Regenerate manifest/checksums after reviewed release changes.")
     args = parser.parse_args()
-    required = ["README.md", "VERSION", "CHANGELOG.md", "PUBLISHING.md", "VALIDATION.md",
+    required = [".gitattributes", ".gitignore", ".github/workflows/validate-guide.yml",
+                ".gitlab-ci.yml", "LICENSE", "README.md", "VERSION", "CHANGELOG.md", "PUBLISHING.md", "VALIDATION.md",
                 "docs/STUDIO_ADOPTION.md", "templates/automation/safe_artifacts.py",
                 "tests/test_automation.py"]
     for name in required:

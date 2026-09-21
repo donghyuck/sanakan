@@ -67,7 +67,8 @@ class ArtifactTests(unittest.TestCase):
             "review": dict(common, patch_sha256=manifest["patch_sha256"], decision="pass", summary="reviewed",
                            blocking_count=0, findings=[]),
             "verification": dict(common, patch_sha256=manifest["patch_sha256"], status="passed",
-                                 commands=["fixture"], exit_codes=[0]),
+                                 commands=["fixture"], check_ids=["unit"], exit_codes=[0]),
+            "verification-policy": dict(common, checks=[{"id": "unit", "command": "fixture"}]),
         }
         self.write_reports()
 
@@ -154,6 +155,52 @@ class ArtifactTests(unittest.TestCase):
     def test_complete_reports_pass_reference_gate(self):
         self.reports()
         self.gate()
+
+    def test_required_verification_coverage_rejected(self):
+        self.reports()
+        self.data["verification-policy"]["checks"].append({"id": "integration", "command": "integration tests"})
+        self.write_reports()
+        self.gate(ok=False)
+        self.data["verification"]["check_ids"].append("integration")
+        self.data["verification"]["commands"].append("integration tests")
+        self.data["verification"]["exit_codes"].append(0)
+        self.write_reports()
+        self.gate()
+
+    def test_verification_policy_mismatches_rejected(self):
+        self.reports()
+        import copy
+        original = copy.deepcopy(self.data)
+        mutations = [
+            ("verification", "check_ids", ["unknown"]),
+            ("verification", "check_ids", ["unit", "unit"]),
+            ("verification", "commands", ["true"]),
+            ("verification-policy", "baseline", "0" * 40),
+            ("verification-policy", "checks", []),
+            ("verification-policy", "checks", [{"id": "unit", "command": "fixture"}] * 2),
+        ]
+        for artifact, key, value in mutations:
+            with self.subTest(artifact=artifact, key=key, value=value):
+                self.data = copy.deepcopy(original)
+                self.data[artifact][key] = value
+                self.write_reports()
+                self.gate(ok=False)
+
+    def test_missing_verification_policy_rejected(self):
+        self.reports()
+        (self.root / "verification-policy.json").unlink()
+        self.gate(ok=False)
+
+    def test_collected_patch_is_reviewable_with_empty_worker_index(self):
+        self.reports()
+        self.assertEqual(self.git("diff", "--cached"), "")
+        clone = self.root / "review"
+        subprocess.run(["git", "clone", "-q", str(self.repo), str(clone)], check=True)
+        subprocess.run(["git", "-C", str(clone), "apply", "--index",
+                        str(self.prefix.with_suffix(".patch"))], check=True)
+        self.assertEqual((clone / "old.txt").read_text(), "changed\n")
+        self.assertEqual(subprocess.check_output(["git", "-C", str(clone), "diff", "--cached",
+                                                "--name-only"], text=True).strip(), "old.txt")
 
     def test_manifest_cannot_hide_actual_patch_path(self):
         self.reports()

@@ -271,10 +271,11 @@ def gate(args):
     implementation = read_artifact(args.implementation, "implementation")
     review = read_artifact(args.review, "review")
     verification = read_artifact(args.verification, "verification")
+    policy = read_artifact(args.verification_policy, "verification-policy")
     digest = hashlib.sha256(Path(args.patch).read_bytes()).hexdigest()
     if not Path(args.patch).stat().st_size:
         fail("Empty patch")
-    if any(item["baseline"] != baseline for item in (manifest, triage, implementation, review, verification)):
+    if any(item["baseline"] != baseline for item in (manifest, triage, implementation, review, verification, policy)):
         fail("Baseline mismatch")
     if any(item["patch_sha256"] != digest for item in (manifest, review, verification)):
         fail("Patch digest mismatch")
@@ -304,6 +305,15 @@ def gate(args):
         fail("Review contains high-risk findings")
     if verification["status"] != "passed" or not verification["commands"] or len(verification["commands"]) != len(verification["exit_codes"]):
         fail("Independent verification incomplete")
+    required = {check["id"]: check["command"] for check in policy["checks"]}
+    ids = verification["check_ids"]
+    if len(required) != len(policy["checks"]):
+        fail("Duplicate required verification IDs")
+    if len(ids) != len(verification["commands"]) or len(ids) != len(set(ids)):
+        fail("Invalid verification IDs")
+    actual = dict(zip(ids, verification["commands"]))
+    if actual != required:
+        fail("Required verification coverage or command mismatch")
     if any(code != 0 for code in verification["exit_codes"]):
         fail("Independent verification failed")
     print("Reference gate passed. Human approval and a separately trusted publisher are still required.")
@@ -317,7 +327,7 @@ def main():
     for name in ("repo", "baseline", "allowlist", "output-prefix"):
         collector.add_argument("--" + name, required=True)
     validator = commands.add_parser("gate")
-    for name in ("baseline", "allowlist", "manifest", "patch", "triage", "implementation", "review", "verification"):
+    for name in ("baseline", "allowlist", "manifest", "patch", "triage", "implementation", "review", "verification", "verification-policy"):
         validator.add_argument("--" + name, required=True)
     args = parser.parse_args()
     try:
@@ -326,7 +336,7 @@ def main():
         elif args.command == "gate":
             gate(args)
         else:
-            for name in ("triage", "implementation", "review", "manifest", "verification"):
+            for name in ("triage", "implementation", "review", "manifest", "verification", "verification-policy"):
                 check_schema(load_json(SCHEMAS / (name + "-schema.json")))
             print("Reference schemas valid")
     except (ValueError, OSError, KeyError, TypeError, UnicodeError) as error:
