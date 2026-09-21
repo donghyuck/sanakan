@@ -8,6 +8,7 @@ from .common import config, safe
 from .gitlab import GitLab
 from .publisher import publish
 from .runner import run
+from . import service
 
 
 def main():
@@ -20,9 +21,43 @@ def main():
         p.add_argument('--runs', required=True)
         if command == 'run':
             p.add_argument('--issue-fixture', help='Offline issue JSON; resulting runs cannot publish')
+    for command in ('watch', 'start', 'status', 'stop', 'retry'):
+        p = sub.add_parser(command)
+        p.add_argument('--config', required=True)
+        p.add_argument('--runs', required=True)
+        if command in {'watch', 'start'}:
+            p.add_argument('--role', choices=service.ROLES, required=True)
+        if command == 'watch':
+            p.add_argument('--once', action='store_true', help='One polling cycle, then exit')
+        if command == 'stop':
+            p.add_argument('--role', choices=(*service.ROLES, 'all'), default='all')
+        if command == 'retry':
+            p.add_argument('--iid', type=int, required=True)
     args = parser.parse_args()
     try:
+        if args.command in {'status', 'stop', 'retry', 'start'}:
+            if args.command == 'status':
+                result = service.status(args.config, args.runs)
+            elif args.command == 'stop':
+                result = service.stop(args.config, args.runs, args.role)
+            elif args.command == 'retry':
+                result = service.retry(args.config, args.runs, args.iid)
+            else:
+                result = service.start(args.config, args.runs, args.role)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 0
         c = config(args.config)
+        if args.command == 'watch':
+            token_key = 'SANAKAN_READ_TOKEN' if args.role == 'develop' else 'SANAKAN_PUBLISH_TOKEN'
+            token = os.environ.get(token_key)
+            if not token:
+                raise ValueError(token_key + ' is required')
+            if args.role == 'develop' and os.environ.get('SANAKAN_PUBLISH_TOKEN'):
+                raise ValueError('Do not inject a publish token into development')
+            result = service.watch(args.config, args.runs, args.role,
+                                   GitLab(c['gitlab_url'], c['project_id'], token), once=args.once)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return 2 if result['services'][args.role].get('last_error') else 0
         if args.command == 'run':
             if os.environ.get('SANAKAN_PUBLISH_TOKEN'):
                 raise ValueError('Do not inject a publish token into a development run')

@@ -54,3 +54,18 @@ class GitLab:
     def merge_requests(self, branch):
         return self.request('GET', '/merge_requests?' + urlencode(
             {'source_branch': branch, 'scope': 'all', 'state': 'all', 'per_page': 100}))
+
+    def issues(self, labels):
+        # Read every page before admitting work; offset order is stable for a poll.
+        result = {}
+        for page in range(1, 101):
+            query = {'scope': 'all', 'state': 'opened', 'order_by': 'created_at',
+                     'sort': 'asc', 'per_page': 100, 'page': page}
+            if labels:
+                query['labels'] = ','.join(labels)
+            rows = self.request('GET', '/issues?' + urlencode(query))
+            for row in rows:
+                result[row['iid']] = row
+            if len(rows) < 100:
+                return list(result.values())
+        raise ValueError('Issue listing exceeds pagination limit')

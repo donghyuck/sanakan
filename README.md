@@ -1,49 +1,88 @@
 # Sanakan — Codex 에이전트 협업 자동화 코딩 도구
 
-**개발 버전 1.3.1 · 2026-09-21**
+**개발 버전 1.4.0 · 2026-09-21**
 
 Sanakan은 GitLab 이슈를 받아 Codex 에이전트가 계획·개발·검증·독립 리뷰를 수행하고,
 Draft MR을 생성해 사람에게 리뷰를 요청하는 도구를 개발하는 프로젝트입니다.
 기존 개발 운영 가이드와 템플릿은 이 도구의 정책·설정 기반으로 유지합니다.
 
-## 현재 실행 가능한 범위
+## 자동 개발 시작하기
 
-이슈 URL을 시작점으로 하는 **단일 호스트 파일럿 실행기**를 제공합니다.
+**한 번 설정하면, 새 이슈를 주기적으로 확인해 개발하고 Draft MR까지 생성합니다.**
+
+1. [자동화 설정 예시](examples/runner/automation-project.json)에 대상 프로젝트·허용 범위·검증·리뷰어와 형식 정책을 지정합니다.
+2. 개발 전용 환경에서 `start --role develop`으로 감시를 시작합니다.
+3. 별도 게시 환경에서 `start --role publish`로 완료 결과의 MR 게시를 시작합니다.
+4. 이후에는 이슈를 등록하고 생성된 MR을 리뷰합니다. `status`, `stop`, `retry`로 관리합니다.
 
 ```text
-이슈 URL → 메인 에이전트 계획 → 개발 에이전트 구현 → 필수 검증
-                                      ↑                ↓
-                                      └─ 수정 피드백 ← 독립 리뷰
-                                                       ↓
-                                                     ready
-                                                       ↓ 별도 게시 환경
-                                            Draft MR → 사람 리뷰 요청
+주기적 이슈 확인 → 작업 브랜치 → Codex 개발·테스트·독립 리뷰
+                                              ↓
+사람 리뷰 요청 ← 형식에 맞는 Draft MR ← 검증된 커밋 게시
 ```
 
-- `python3 -m sanakan run`: 이슈 수신, 격리 clone, 독립 Codex 세션, 검증·리뷰·수정 반복.
-- `python3 -m sanakan publish`: 동일 issue/baseline/patch를 재확인하고 GitLab branch·commit·Draft MR 및 reviewer 설정.
-- 메인/개발/리뷰는 별도 `codex exec` 세션이며 Python 조정기가 결과 전달과 역할 실행을 관리합니다.
-- 필수 검증과 게시 조건은 프로그램이 검사합니다. 모델의 성공 주장만으로 게시하지 않습니다.
-- 개발/검증 과정에 게시 토큰을 제공하지 않습니다. 게시기는 생성된 프로젝트 코드를 실행하지 않습니다.
+브랜치·커밋·MR 형식은 프로젝트 설정으로 정하고 게시 후에도 검사합니다.
+MCP 없이 Codex 스킬이 CLI를 호출하는 플러그인 패키지도 제공합니다.
+**[자동화 설정·운영 및 Codex 연결 가이드](docs/AUTOMATION.md)**
 
-실제 Codex/GitLab 연동 실증은 아직 수행하지 않았습니다. Webhook 서버, 분산 큐, 댓글 답변 후 자동 재개,
-사람 리뷰 피드백 수신, 플러그인 설치, 자동 병합·배포는 후속 단계입니다.
-**이슈 등록 이벤트에 바로 연결되는 완성된 운영 서비스로 배포하지 마세요.**
+아래 그림은 자동화 연결 전에 기존 로컬 Git 프로젝트에서 작은 작업을 테스트하는 절차입니다.
 
-## 시작하기
+## 그림으로 보는 설치와 사용
 
-**기존 로컬 Git 프로젝트에서 먼저 시작합니다. GitLab은 나중에 연결합니다.**
+**이미 로컬에 있는 Git 프로젝트로 시작합니다. GitLab 계정이나 토큰은 필요 없습니다.**
+실제 개발을 수행할 Codex 인증과 프로젝트의 빌드·테스트 도구는 준비되어 있어야 합니다.
 
-[내 Git 프로젝트에서 시작하기](docs/INSTALL_LOCAL.md)의 네 단계만 따라 하세요.
+### 1. 설치와 설정
 
-1. 내 프로젝트 경로 지정
-2. 수정할 파일·검증 명령·할 일 작성
-3. 에이전트 실행
-4. `ready`와 코드 변경 결과 확인
+![Sanakan 로컬 설치: 도구와 프로젝트 준비, 경로 지정, project.json 설정, issue.json 작업 작성](docs/images/local-setup.svg)
 
-대상 프로젝트에 Sanakan을 복사하거나 AGENTS를 수정할 필요는 없습니다.
-GitLab 토큰은 필요 없으며, 실제 에이전트를 실행할 Codex 인증은 필요합니다.
-원본 프로젝트는 유지되고, 작업 결과는 별도 폴더에 저장됩니다.
+준비할 파일은 두 개입니다.
+
+| 파일 | 내가 작성할 내용 |
+|---|---|
+| `project.json` | 대상 프로젝트, 수정할 파일, 테스트·빌드 명령 |
+| `issue.json` | 무엇을 고칠지, 어떤 결과가 나오면 완료인지 |
+
+**처음이라면 [설치 가이드의 1~2단계](docs/INSTALL_LOCAL.md#1-경로-지정하기)를 따라 설정 파일을 만드세요.**
+가이드에는 그대로 복사할 명령과 직접 바꿀 값이 구분되어 있습니다.
+대상 프로젝트에 Sanakan을 복사하거나 기존 `AGENTS.md`를 수정할 필요는 없습니다.
+
+### 2. 실행과 결과 확인
+
+![Sanakan 사용: 메인 계획, 개발, 테스트, 독립 리뷰와 한도 내 수정 반복. ready, needs_human, failed 상태 확인](docs/images/local-run.svg)
+
+설치 가이드에서 경로와 설정을 준비한 **같은 터미널**, Sanakan 폴더에서 실행합니다.
+
+```sh
+env -u SANAKAN_READ_TOKEN -u SANAKAN_PUBLISH_TOKEN \
+  python3 -m sanakan run \
+  --config "$SANAKAN_SETTINGS/project.json" \
+  --issue https://local.invalid/local/project/-/issues/1 \
+  --issue-fixture "$SANAKAN_SETTINGS/issue.json" \
+  --runs "$SANAKAN_RUNS"
+```
+
+`--issue-fixture`는 GitLab 대신 로컬 작업 파일을 읽는 옵션입니다. URL은 로컬 식별자이므로 그대로 둡니다.
+
+- **`ready`**: 최종 attempt의 `change.patch`, `verification.json`, `review.json`을 확인합니다.
+- **`needs_human`**: `state.json`의 `reason`과 `questions`를 확인합니다.
+- **`failed`**: 중단 이유와 해당 attempt의 로그를 확인합니다.
+
+원본 프로젝트의 현재 commit을 별도로 복제해 작업합니다. 미커밋 변경은 포함되지 않으며,
+원본 반영·commit·push도 자동으로 하지 않습니다. 첫 테스트는 **`ready`와 변경 내용을 확인하면 완료**입니다.
+
+[전체 설치 가이드와 문제 해결](docs/INSTALL_LOCAL.md) · [다음 단계: GitLab 연결](docs/RUNNER.md)
+
+## 현재 구현 범위
+
+- `watch` / `start`: 주기적 이슈 조회 또는 ready 결과 게시. 개발·게시 역할별 프로세스.
+- `status` / `stop` / `retry`: 상태 확인, 협조적 중지, 기록을 보존하는 재시도.
+- `run` / `publish`: 기존 단일 이슈 실행·게시도 유지.
+- `publication`: 작업 브랜치·커밋 메시지·MR 제목/본문 템플릿과 실제 게시 결과 검사.
+- `plugins/sanakan`: Codex 관리 스킬과 CLI runtime을 묶는 플러그인 배포 소스.
+
+실제 Codex/GitLab 운영 실증은 아직 수행하지 않았습니다. 개발·검증과 게시 환경의 격리가 필요합니다.
+Webhook, 다중 호스트 분산 실행, 사람 리뷰 댓글 기반 후속 수정, 자동 병합은 후속 범위입니다.
 
 ## 로컬 검증
 
@@ -81,4 +120,4 @@ python3 tools/validate_package.py
 
 소스와 배포 파일의 일치는 MANIFEST/SHA256SUMS로 검사합니다. 코드 변경 후 검토·테스트를 수행하고
 `python3 tools/validate_package.py --refresh`로 목록을 갱신합니다.
-플러그인은 이 실행 흐름이 실증된 후 설치·설정·점검 수단으로 추가할 예정입니다.
+플러그인 ZIP은 `python3 tools/build_plugin.py --output <저장소-밖의-ZIP>`으로 생성합니다.

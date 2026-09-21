@@ -1,3 +1,33 @@
+# Sanakan 1.4.0 자동 개발 루프 검증
+
+- 이슈 목록 polling → 독립 Codex 역할 → 검증 → 형식화된 branch/commit/MR 게시를 연결했다.
+- 테스트는 실제 임시 Git 저장소와 검증 프로세스를 사용하며 모델/GitLab은 모의 응답이다.
+- 전체 회귀 테스트 63개 통과: 기존 44개와 새 서비스/정책 19개.
+- 새 시나리오: 다음 poll의 새 이슈, 중복 방지, custom branch/commit/MR, label 회수,
+  게시 응답 유실 복구와 재시도 한도, 명시적 재시도와 이력 보존, 비정상 종료 복구,
+  단계 경계 중지, 실제 watcher thread 정지, 정책 변경 차단, target baseline 및 fetch origin 제한,
+  만료 후 관리, 자식 시작 환경의 토큰 분리, 기존 branch 충돌, 동시 registry 갱신, API pagination.
+- Codex 스킬 및 플러그인 manifest 공식 로컬 validator를 통과했다.
+  validator의 PyYAML은 저장소 밖 임시 venv에만 설치했으며 runtime은 표준 라이브러리를 사용한다.
+- 전체 패키지 ZIP 76개 파일과 standalone 플러그인 ZIP 생성/무결성 검사를 통과했다.
+  플러그인을 임시 폴더에 풀어 독립 runtime의 관리 launcher --help 실행도 확인했다.
+
+실제 GitLab 계정·모델·권한·알림·CI·OS 자동 시작은 실행하지 않았다.
+운영 환경의 개발/검증 격리와 증거 저장소 권한은 별도 준비해야 한다.
+플러그인 소스를 제작했으며 사용자의 개인 marketplace나 설치 상태는 변경하지 않았다.
+이번 구현에 대한 별도 에이전트 리뷰는 수행하지 않았다.
+
+---
+
+# Sanakan 1.3.2 시각 안내 검증
+
+- 설치·설정 및 실행·결과 확인 SVG 두 장을 제작하고 렌더링하여 한글·배치·잘림을 확인했다.
+- SVG는 외부 이미지나 script 없이 저장소 안에서 제공한다. XML 파싱과 README의 이미지 링크를 확인했다.
+- 실행 명령은 기존 로컬 fixture 명령을 사용한다. 실행기 코드 변경이 없어 모델/전체 회귀 테스트는 재실행하지 않았다.
+- 패키지 링크·문법·manifest/checksum 검증을 수행했다.
+
+---
+
 # Sanakan 1.3.1 설치 가이드 검증
 
 - 변경 범위: 로컬 Git 우선 설치 문서, 설정/작업 JSON 예시 및 배포 메타데이터. 실행기 코드 변경 없음.

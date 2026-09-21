@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from .common import checkout, check_issue, config, digest, git, issue_iid, locked, safe, save, task_dir
 from .runner import gate
+from .policy import publication
 
 
 def tree(repo, revision):
@@ -35,21 +36,7 @@ def actions(repo, baseline, final, changed):
     return result
 
 
-def description(issue_url, folder, manifest):
-    implementation = safe.load_json(folder / 'implementation.json')
-    verification = safe.load_json(folder / 'verification.json')
-    review = safe.load_json(folder / 'review.json')
-    records = '\n'.join('- `' + command.replace('`', "'") + '`: exit ' + str(code)
-                        for command, code in zip(verification['commands'], verification['exit_codes']))
-    return ('## Why\n\n' + issue_url + '\n\n## What\n\n' + implementation['summary'] +
-            '\n\n## Validation\n\n' + records + '\n\nBaseline: `' + manifest['baseline'] +
-            '`\n\nPatch SHA-256: `' + manifest['patch_sha256'] + '`\n\nIndependent review: ' +
-            review['summary'] + '\n\n## Risk / Rollback\n\n' + implementation['rollback'] +
-            '\n\n## AI / Subagent Usage\n\nMain, worker and reviewer ran as separate Codex sessions. '
-            'Human review and merge are required.\n')
-
-
-def publish(config_path, issue_url, root, provider):
+def publish(config_path, issue_url, root, provider, stop_requested=lambda: False):
     c = config(config_path)
     iid = issue_iid(c, issue_url)
     with locked(task_dir(root, c, iid)) as task:
@@ -75,6 +62,8 @@ def publish(config_path, issue_url, root, provider):
         if manifest['patch_sha256'] != state['patch_sha256']:
             raise ValueError('Ready patch changed')
         def check_current():
+            if stop_requested():
+                raise ValueError('Stop requested; publication stopped at a phase boundary')
             if c['expires_at'] <= time.time():
                 raise ValueError('Project authorization expired')
             current = check_issue(c, iid, provider.issue(iid))
@@ -85,8 +74,13 @@ def publish(config_path, issue_url, root, provider):
                 raise ValueError('Target branch advanced; rebase and revalidation required')
 
         check_current()
-        branch_name = 'codex/issue-' + str(iid)
-        marker = 'Sanakan-Run: ' + state['key'] + '\nPatch-SHA256: ' + manifest['patch_sha256']
+        formatted = publication(c, issue, issue_url,
+            safe.load_json(folder / 'implementation.json'), safe.load_json(folder / 'verification.json'),
+            safe.load_json(folder / 'review.json'), manifest, state['key'])
+        branch_name = formatted['branch']
+        git(Path(c['repo_path']), 'check-ref-format', '--branch', branch_name)
+        if branch_name == c['target_branch']:
+            raise ValueError('Work branch must differ from target')
         # Build the exact final tree from the immutable patch, never from worker checkout.
         with tempfile.TemporaryDirectory(prefix='sanakan-publish-') as scratch:
             repo = Path(scratch) / 'repo'
@@ -102,11 +96,11 @@ def publish(config_path, issue_url, root, provider):
                 # One atomic commit creates the branch; never force or overwrite a branch.
                 provider.request('POST', '/repository/commits', {
                     'branch': branch_name, 'start_sha': c['baseline'],
-                    'commit_message': '[ai-assisted] fix: issue #' + str(iid) + '\n\n' + marker,
+                    'commit_message': formatted['commit'],
                     'actions': actions(repo, c['baseline'], final, manifest['changed_files'])})
                 branch = provider.branch(branch_name)
             commit = branch['commit']
-            if marker not in commit['message'] or commit['parent_ids'] != [c['baseline']]:
+            if formatted['commit'].strip() != commit['message'].strip() or commit['parent_ids'] != [c['baseline']]:
                 raise ValueError('Existing branch belongs to another change')
             if provider.tree(commit['id']) != expected:
                 raise ValueError('Remote tree differs from verified patch')
@@ -119,13 +113,14 @@ def publish(config_path, issue_url, root, provider):
         else:
             mr = provider.request('POST', '/merge_requests', {
                 'source_branch': branch_name, 'target_branch': c['target_branch'],
-                'title': 'Draft: ' + issue['title'], 'description': description(issue_url, folder, manifest),
+                'title': formatted['mr_title'], 'description': formatted['mr_body'],
                 'reviewer_ids': c['reviewer_ids'], 'remove_source_branch': False})
         # Re-read after both creation and retry, including ambiguous POST results.
         mr = provider.request('GET', '/merge_requests/' + str(mr['iid']))
         if (mr['state'] != 'opened' or mr['source_branch'] != branch_name or
                 mr['target_branch'] != c['target_branch'] or mr['sha'] != commit['id'] or
-                not mr['draft'] or
+                not mr['draft'] or mr['title'] != formatted['mr_title'] or
+                mr['description'] != formatted['mr_body'] or
                 not set(c['reviewer_ids']) <= {user['id'] for user in mr['reviewers']}):
             raise ValueError('Merge request readback mismatch; human inspection required')
         check_current()

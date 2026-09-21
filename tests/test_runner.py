@@ -97,7 +97,7 @@ class Provider:
             self.commits += 1
             return {'id': self.git('rev-parse', 'HEAD')}
         if path == '/merge_requests' and method == 'POST':
-            mr = dict(iid=1, state='opened', source_branch=body['source_branch'],
+            mr = dict(iid=1, state='opened', title=body['title'], description=body['description'], source_branch=body['source_branch'],
                       target_branch=body['target_branch'], sha=self.git('rev-parse', 'HEAD'), draft=True,
                       reviewers=[{'id': i} for i in body['reviewer_ids']],
                       web_url='https://gitlab.example.com/team/project/-/merge_requests/1')

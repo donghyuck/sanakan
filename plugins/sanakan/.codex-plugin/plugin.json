@@ -1,0 +1,18 @@
+{
+  "name": "sanakan",
+  "version": "1.4.0",
+  "description": "Manage issue-driven Codex development and Draft MR automation.",
+  "author": {
+    "name": "Sanakan"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Sanakan",
+    "shortDescription": "Start, inspect and stop Sanakan coding automation.",
+    "longDescription": "Operate the Sanakan polling CLI with separate development and publishing roles.",
+    "developerName": "Sanakan",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "이 프로젝트의 Sanakan 자동 개발 상태를 확인해줘."
+  }
+}

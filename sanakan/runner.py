@@ -4,6 +4,7 @@ from pathlib import Path
 import shlex
 import time
 from types import SimpleNamespace
+from .policy import branch
 from .common import (AUTOMATION, checkout, check_issue, config, digest, git, issue_iid,
                      locked, process, safe, save, task_dir)
 
@@ -40,7 +41,7 @@ def verify(c, workspace, folder, manifest):
     return result
 
 
-def run(config_path, issue_url, root, agents, provider=None, fixture=None):
+def run(config_path, issue_url, root, agents, provider=None, fixture=None, stop_requested=lambda: False):
     c = config(config_path)
     iid = issue_iid(c, issue_url)
     issue = check_issue(c, iid, fixture if fixture is not None else provider.issue(iid))
@@ -63,6 +64,8 @@ def run(config_path, issue_url, root, agents, provider=None, fixture=None):
                  'fixture': fixture is not None, 'attempt': 0, 'started_at': time.time()}
 
         def transition(status, **fields):
+            if stop_requested():
+                raise ValueError('Stop requested; development stopped at a phase boundary')
             state.update(status=status, **fields)
             save(state_path, state)
 
@@ -70,6 +73,11 @@ def run(config_path, issue_url, root, agents, provider=None, fixture=None):
         try:
             worker = task / 'worker'
             checkout(c['repo_path'], c['baseline'], worker)
+            work_branch = branch(c, iid)
+            if work_branch == c['target_branch']:
+                raise ValueError('Work branch must differ from target')
+            git(worker, 'switch', '-c', work_branch)
+            state['branch'] = work_branch
             feedback = {}
             for attempt in range(1, c['max_attempts'] + 1):
                 if c['expires_at'] <= time.time():
@@ -137,5 +145,6 @@ def run(config_path, issue_url, root, agents, provider=None, fixture=None):
                 return state
             transition('needs_human', reason='Repair attempt limit reached', feedback=feedback)
         except (ValueError, OSError, KeyError, TypeError) as error:
-            transition('failed', reason=str(error))
+            state.update(status='stopped' if stop_requested() else 'failed', reason=str(error))
+            save(state_path, state)
         return state

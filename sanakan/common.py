@@ -80,12 +80,12 @@ def checkout(source, baseline, target):
     git(target, 'remote', 'remove', 'origin')
 
 
-def config(path):
+def config(path, allow_expired=False):
     c = safe.load_json(path)
     required = {'gitlab_url', 'project_path', 'project_id', 'repo_path', 'baseline', 'target_branch',
                 'allowed_author_ids', 'reviewer_ids', 'allowed_paths', 'checks', 'max_attempts',
                 'timeout_seconds', 'max_patch_bytes', 'expires_at'}
-    if type(c) is not dict or set(c) != required:
+    if type(c) is not dict or not required <= set(c) or set(c) - required - {'publication', 'automation'}:
         raise ValueError('Unknown or missing configuration fields')
     u = urlsplit(c['gitlab_url'])
     if u.scheme != 'https' or not u.hostname or u.username or u.password or u.query or u.fragment or u.path:
@@ -98,7 +98,7 @@ def config(path):
             raise ValueError('Invalid numeric setting: ' + name)
     if c['max_attempts'] > 5 or c['timeout_seconds'] > 3600:
         raise ValueError('Pilot limit: at most 5 attempts and 3600 seconds per command')
-    if c['expires_at'] <= time.time():
+    if not allow_expired and c['expires_at'] <= time.time():
         raise ValueError('Project authorization expired')
     for name in ('allowed_author_ids', 'reviewer_ids'):
         if not isinstance(c[name], list) or not c[name] or any(type(i) is not int or i < 1 for i in c[name]):
@@ -120,7 +120,30 @@ def config(path):
     c['repo_path'] = str(repo)
     git(repo, 'check-ref-format', '--branch', c['target_branch'])
     git(repo, 'cat-file', '-e', c['baseline'] + '^{commit}')
+    from .policy import validate_policy, branch
+    if 'publication' in c:
+        validate_policy(c['publication'])
+        git(repo, 'check-ref-format', '--branch', branch(c, 1))
+        if branch(c, 1) == c['target_branch']:
+            raise ValueError('Work branch must differ from target')
+    if 'automation' in c:
+        validate_automation(c['automation'])
     return c
+
+
+def validate_automation(a):
+    keys = {'poll_seconds', 'required_labels', 'baseline_mode', 'fetch_source', 'max_publish_attempts'}
+    if not isinstance(a, dict) or set(a) != keys:
+        raise ValueError('Invalid automation configuration')
+    if type(a['poll_seconds']) is not int or not 1 <= a['poll_seconds'] <= 86400:
+        raise ValueError('poll_seconds must be 1..86400')
+    labels = a['required_labels']
+    if not isinstance(labels, list) or any(not isinstance(x, str) or not x.strip() or ',' in x or x.lower() in {'any', 'none'} for x in labels):
+        raise ValueError('required_labels must be an array of exact labels; [] accepts all open issues')
+    if a['baseline_mode'] not in {'pinned', 'target'} or type(a['fetch_source']) is not bool:
+        raise ValueError('Invalid baseline/fetch policy')
+    if type(a['max_publish_attempts']) is not int or not 1 <= a['max_publish_attempts'] <= 5:
+        raise ValueError('max_publish_attempts must be 1..5')
 
 
 def issue_iid(c, url):
@@ -137,16 +160,18 @@ def check_issue(c, iid, issue):
         raise ValueError('Issue is closed or its author is not authorized')
     if not issue.get('title') or not issue.get('description') or not issue.get('updated_at'):
         raise ValueError('Issue title, description and revision are required')
+    if 'automation' in c and not set(c['automation']['required_labels']) <= set(issue.get('labels', [])):
+        raise ValueError('Issue no longer has the required automation labels')
     return {key: issue[key] for key in ('iid', 'project_id', 'title', 'description', 'updated_at', 'state', 'author')}
 
 
 @contextlib.contextmanager
-def locked(directory):
+def locked(directory, blocking=False):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     with (directory / 'lock').open('a') as stream:
         try:
-            fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(stream, fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
         except BlockingIOError:
             raise ValueError('This issue already has an active operation') from None
         yield directory

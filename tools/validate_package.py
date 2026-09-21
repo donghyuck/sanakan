@@ -36,7 +36,9 @@ def main():
     parser.add_argument("--refresh", action="store_true", help="Regenerate manifest/checksums after reviewed release changes.")
     args = parser.parse_args()
     required = ["AGENTS.md", "sanakan/__main__.py", "sanakan/runner.py",
-                "sanakan/publisher.py", "docs/EXECUTION_SPEC.md", "docs/RUNNER.md", "tests/test_runner.py",
+                "sanakan/publisher.py", "sanakan/service.py", "sanakan/policy.py",
+                "plugins/sanakan/.codex-plugin/plugin.json", "plugins/sanakan/skills/sanakan-manage/SKILL.md",
+                "tools/build_plugin.py", "tests/test_service.py", "docs/AUTOMATION.md", "docs/EXECUTION_SPEC.md", "docs/RUNNER.md", "tests/test_runner.py",
                 ".gitattributes", ".gitignore", ".github/workflows/validate-guide.yml",
                 ".gitlab-ci.yml", "LICENSE", "README.md", "VERSION", "CHANGELOG.md", "PUBLISHING.md", "VALIDATION.md",
                 "docs/STUDIO_ADOPTION.md", "templates/automation/safe_artifacts.py",

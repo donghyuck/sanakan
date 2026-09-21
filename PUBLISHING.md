@@ -33,10 +33,10 @@ git init -b main
 git add README.md VERSION CHANGELOG.md LICENSE LICENSE_NOTICE.md PUBLISHING.md VALIDATION.md
 git add .gitignore .gitattributes .github .gitlab-ci.yml
 git add 01_NEW_PROJECT_CHECKLIST.md 02_EXISTING_PROJECT_CHECKLIST.md 03_SECURITY_CHECKLIST.md
-git add AGENTS.md sanakan docs examples templates tests tools MANIFEST.txt SHA256SUMS
+git add AGENTS.md sanakan plugins docs examples templates tests tools MANIFEST.txt SHA256SUMS
 git diff --cached --check
 git diff --cached --stat
-git commit -m "[ai-assisted] docs(guide): 개발 운영 가이드 1.3.1 정리"
+git commit -m "[ai-assisted] docs(guide): 개발 운영 가이드 1.4.0 정리"
 git remote add origin <사용자가-확인한-원격-URL>
 git push -u origin main
 ```
