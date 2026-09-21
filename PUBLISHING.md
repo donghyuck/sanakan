@@ -2,7 +2,7 @@
 
 ## 1. 어떤 저장소에 올릴 것인가
 
-이 폴더는 **가이드 전용 Git 저장소의 루트**로 게시할 수 있다.
+이 폴더는 **자동화 코딩 도구의 Git 저장소의 루트**로 게시할 수 있다.
 기존 RAG 애플리케이션 루트에 그대로 복사하는 용도가 아니다.
 대상 프로젝트에 적용할 때는 templates와 docs의 필요한 내용만 기존 정책에 병합한다.
 
@@ -33,16 +33,17 @@ git init -b main
 git add README.md VERSION CHANGELOG.md LICENSE LICENSE_NOTICE.md PUBLISHING.md VALIDATION.md
 git add .gitignore .gitattributes .github .gitlab-ci.yml
 git add 01_NEW_PROJECT_CHECKLIST.md 02_EXISTING_PROJECT_CHECKLIST.md 03_SECURITY_CHECKLIST.md
-git add docs examples templates tests tools MANIFEST.txt SHA256SUMS
+git add AGENTS.md sanakan docs examples templates tests tools MANIFEST.txt SHA256SUMS
 git diff --cached --check
 git diff --cached --stat
-git commit -m "[ai-assisted] docs(guide): 개발 운영 가이드 1.2.0 정리"
+git commit -m "[ai-assisted] docs(guide): 개발 운영 가이드 1.3.0 정리"
 git remote add origin <사용자가-확인한-원격-URL>
 git push -u origin main
 ```
 
 조직이 Issue/Why/What/Validation을 포함한 commit 본문을 요구하면 해당 템플릿을 사용한다.
 기존 저장소라면 위 git init/add를 그대로 실행하지 말고 작업 브랜치와 PR을 사용한다.
+실제 실행기 사용과 GitLab 게시 단계는 [실행기 사용법](docs/RUNNER.md)을 따른다.
 이 패키지의 templates/.gitlab-ci.codex.example.yml은 소비자 CI 예시이며 루트 CI와 역할이 다르다.
 
 ## 4. 수정본을 다시 배포할 때

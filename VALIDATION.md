@@ -1,4 +1,39 @@
-# 배포본 검증 기록
+# Sanakan 1.3.0 검증 기록
+
+검증일: 2026-09-21. 자동화 코딩 도구의 이슈 URL 기반 파일럿을 구현했다.
+
+## 실행한 검증
+
+- 기존 patch/gate 회귀: 24개 통과.
+- 새 실행기/게시기 회귀: 20개 통과. 합계 44개.
+- `python3 -m sanakan --help`: CLI 진입점 확인.
+- `python3 templates/automation/safe_artifacts.py check-schemas`: 통과.
+- 검증기에서 파일 링크·Python/JSON/TOML·shell·manifest/checksum 검사.
+
+통합 테스트는 실제 임시 Git 저장소·명령 프로세스·patch 적용·tree 비교를 수행했다.
+모델과 GitLab은 모의 어댑터를 사용했다. 별도 테스트에서 가짜 codex 실행 파일을 통해
+실제 CLI → subprocess → schema 결과 → ready까지 연결했다. 실제 모델 호출은 아니다.
+
+확인한 실패 경로: 테스트/리뷰/worker 실패 후 수정, 반복 한도, 질문 상태,
+승인 밖 파일 변경, 이슈/target 변경, fixture 게시 차단, 조작 patch,
+잘못된 reviewer readback, 잠금 충돌, URL allowlist, 만료 설정,
+프로세스 timeout, child 환경의 토큰 제외, HTTP redirect 거절,
+MR 생성 응답 유실 이후 branch/MR 중복 없는 재시도.
+바이너리 신규 파일·삭제·실행 비트 변경의 게시 actions와 최종 tree도 확인했다.
+
+## 검증 경계
+
+- 로컬 Codex CLI 0.139.0의 exec 옵션을 확인했다. 실제 인증 세션/모델 협업은 미실행.
+- 실제 GitLab HTTP·권한·MR/reviewer 알림·CI는 미실행.
+- Webhook·분산 실행·댓글 답변/리뷰 후 자동 재개·플러그인은 아직 미구현.
+- OS/컨테이너·네트워크 격리, 비밀 파일 접근 통제와 운영 비용 제한은 실제 호스트에서 추가 검증해야 한다.
+- 이번 구현은 단일 에이전트의 소스 재검토와 자동 테스트로 확인했다.
+
+아래 기록은 이전 가이드 배포 당시의 검증 이력이다.
+
+---
+
+# 1.2.0 검증 기록 (이전 배포 당시 기록)
 
 버전: 1.2.0 · 검증일: 2026-09-21
 

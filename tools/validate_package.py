@@ -35,7 +35,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--refresh", action="store_true", help="Regenerate manifest/checksums after reviewed release changes.")
     args = parser.parse_args()
-    required = [".gitattributes", ".gitignore", ".github/workflows/validate-guide.yml",
+    required = ["AGENTS.md", "sanakan/__main__.py", "sanakan/runner.py",
+                "sanakan/publisher.py", "docs/EXECUTION_SPEC.md", "docs/RUNNER.md", "tests/test_runner.py",
+                ".gitattributes", ".gitignore", ".github/workflows/validate-guide.yml",
                 ".gitlab-ci.yml", "LICENSE", "README.md", "VERSION", "CHANGELOG.md", "PUBLISHING.md", "VALIDATION.md",
                 "docs/STUDIO_ADOPTION.md", "templates/automation/safe_artifacts.py",
                 "tests/test_automation.py"]

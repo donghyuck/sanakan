@@ -5,6 +5,7 @@
 01_NEW_PROJECT_CHECKLIST.md
 02_EXISTING_PROJECT_CHECKLIST.md
 03_SECURITY_CHECKLIST.md
+AGENTS.md
 CHANGELOG.md
 LICENSE
 LICENSE_NOTICE.md
@@ -14,9 +15,19 @@ README.md
 SHA256SUMS
 VALIDATION.md
 VERSION
+docs/EXECUTION_SPEC.md
 docs/ROLLOUT_CHECKLIST.md
+docs/RUNNER.md
 docs/STUDIO_ADOPTION.md
 examples/java11-spring-vue3/STACK_NOTES.md
+examples/runner/project.json
+sanakan/__init__.py
+sanakan/__main__.py
+sanakan/agents.py
+sanakan/common.py
+sanakan/gitlab.py
+sanakan/publisher.py
+sanakan/runner.py
 templates/.codex/agents/architect.toml
 templates/.codex/agents/reviewer.toml
 templates/.codex/agents/worker.toml
@@ -46,5 +57,6 @@ templates/docs/codex/PROJECT_MAP.template.md
 templates/frontend/AGENTS.md
 templates/scripts/verify.sh
 tests/test_automation.py
+tests/test_runner.py
 tools/build_release.py
 tools/validate_package.py
