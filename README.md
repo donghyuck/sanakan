@@ -1,6 +1,6 @@
 # Sanakan — Codex 에이전트 협업 자동화 코딩 도구
 
-**개발 버전 1.3.0 · 2026-09-21**
+**개발 버전 1.3.1 · 2026-09-21**
 
 Sanakan은 GitLab 이슈를 받아 Codex 에이전트가 계획·개발·검증·독립 리뷰를 수행하고,
 Draft MR을 생성해 사람에게 리뷰를 요청하는 도구를 개발하는 프로젝트입니다.
@@ -32,21 +32,18 @@ Draft MR을 생성해 사람에게 리뷰를 요청하는 도구를 개발하는
 
 ## 시작하기
 
-먼저 [실행 명세](docs/EXECUTION_SPEC.md)와 [실행기 사용법](docs/RUNNER.md)을 읽고
-[프로젝트 설정 예시](examples/runner/project.json)의 대상·기준 commit·허용 경로·검증·리뷰어를 정합니다.
-기존 프로젝트의 AGENTS를 읽고 따르며 가이드 전체를 덮어쓰지 않습니다.
+**기존 로컬 Git 프로젝트에서 먼저 시작합니다. GitLab은 나중에 연결합니다.**
 
-```sh
-python3 -m sanakan --help
-python3 -m sanakan run \
-  --config /protected/project.json \
-  --issue https://gitlab.example.com/team/project/-/issues/123 \
-  --runs /var/lib/sanakan/runs
-```
+[내 Git 프로젝트에서 시작하기](docs/INSTALL_LOCAL.md)의 네 단계만 따라 하세요.
 
-실행에는 POSIX, Python 3.11+, Git, 인증된 Codex CLI와 개발 전용 환경이 필요합니다.
-읽기 토큰·게시 토큰의 분리 및 게시 명령은 사용법에 설명합니다.
-별도 clone과 환경변수 필터링만으로 OS/네트워크 격리가 보장되지는 않습니다.
+1. 내 프로젝트 경로 지정
+2. 수정할 파일·검증 명령·할 일 작성
+3. 에이전트 실행
+4. `ready`와 코드 변경 결과 확인
+
+대상 프로젝트에 Sanakan을 복사하거나 AGENTS를 수정할 필요는 없습니다.
+GitLab 토큰은 필요 없으며, 실제 에이전트를 실행할 Codex 인증은 필요합니다.
+원본 프로젝트는 유지되고, 작업 결과는 별도 폴더에 저장됩니다.
 
 ## 로컬 검증
 

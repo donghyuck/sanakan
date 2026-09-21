@@ -1,4 +1,7 @@
-# Sanakan 실행기 사용법
+# GitLab 연동 실행기 사용법
+
+기존 로컬 Git 프로젝트의 첫 적용은 [로컬 설치·테스트 가이드](INSTALL_LOCAL.md)를 먼저 따른다.
+이 문서는 로컬 실증 이후 실제 GitLab 이슈 읽기와 MR 게시를 연결하는 단계다.
 
 이슈 URL을 입력받는 Codex 자동화 코딩 파일럿이다. 전체 목표와 상태는 [실행 명세](EXECUTION_SPEC.md)를 따른다.
 Webhook 서버와 플러그인은 아직 포함하지 않는다.

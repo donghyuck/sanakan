@@ -16,10 +16,13 @@ SHA256SUMS
 VALIDATION.md
 VERSION
 docs/EXECUTION_SPEC.md
+docs/INSTALL_LOCAL.md
 docs/ROLLOUT_CHECKLIST.md
 docs/RUNNER.md
 docs/STUDIO_ADOPTION.md
 examples/java11-spring-vue3/STACK_NOTES.md
+examples/runner/local-issue.json
+examples/runner/local-project.json
 examples/runner/project.json
 sanakan/__init__.py
 sanakan/__main__.py
