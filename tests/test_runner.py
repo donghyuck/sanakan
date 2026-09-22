@@ -15,6 +15,7 @@ from sanakan.agents import CodexAgents
 from sanakan.common import config, digest, environment, issue_iid, locked, process, save, task_dir
 from sanakan.publisher import publish, tree
 from sanakan.runner import run
+from sanakan import handoff
 
 
 class Agents:
@@ -140,10 +141,27 @@ class RunnerTests(unittest.TestCase):
         self.url = 'https://gitlab.example.com/team/project/-/issues/1'
         self.runs = self.root / 'runs'
         self.provider = Provider(self.issue, self.repo, self.baseline)
+        self.channel = self.root / 'handoff'; self.channel.mkdir()
+        self.keyfile = self.root / 'key'; self.keyfile.write_bytes(os.urandom(32)); self.keyfile.chmod(0o600)
+        env_patch = patch.dict(os.environ, {'SANAKAN_HANDOFF_DIR': str(self.channel), 'SANAKAN_HANDOFF_KEY_FILE': str(self.keyfile)})
+        env_patch.start(); self.addCleanup(env_patch.stop)
 
     def run_task(self, agents=None, fixture=False):
-        return run(self.path, self.url, self.runs, agents or Agents(), self.provider,
-                   self.issue if fixture else None)
+        if not fixture:
+            self.c['execution'] = {'backend': 'docker', 'image': 'fixture@sha256:' + 'a'*64, 'agent_network': 'model-test'}
+            save(self.path, self.c)
+        # Model and container boundary are simulated here; handoff signing/import and
+        # verification subprocesses are real. Docker boundary tests live separately.
+        with patch('sanakan.execution.container', side_effect=lambda execution, workspace, command, timeout, log, **kw:
+                   process(command, workspace, timeout, log=log)):
+            result = run(self.path, self.url, self.runs, agents or Agents(), self.provider,
+                         self.issue if fixture else None)
+        self.publish_config, self.publish_runs = self.path, self.runs
+        if result['status'] == 'ready' and not fixture:
+            packet = handoff.export_run(self.path, self.url, self.runs)
+            self.publish_runs = self.root / ('publisher-' + self.runs.name)
+            self.publish_config, _, _ = handoff.import_run(self.path, packet, self.publish_runs)
+        return result
 
     def test_full_run_and_publish_and_repeated_delivery(self):
         agents = Agents()
@@ -153,9 +171,9 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual((self.repo / 'value.txt').read_text(), 'broken')
         self.assertEqual(self.run_task(agents), state)
         self.assertEqual(len(agents.calls), 3)
-        result = publish(self.path, self.url, self.runs, self.provider)
+        result = publish(self.publish_config, self.url, self.publish_runs, self.provider)
         self.assertEqual(result['status'], 'published')
-        again = publish(self.path, self.url, self.runs, self.provider)
+        again = publish(self.publish_config, self.url, self.publish_runs, self.provider)
         self.assertEqual(again['commit'], result['commit'])
         self.assertEqual(self.provider.commits, 1)
         self.assertEqual(len(self.provider.mrs), 1)
@@ -175,7 +193,7 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(result['status'], 'needs_human')
         self.assertEqual(result['attempt'], 2)
         with self.assertRaises(ValueError):
-            publish(self.path, self.url, self.runs, self.provider)
+            publish(self.publish_config, self.url, self.publish_runs, self.provider)
 
     def test_questions_stop_before_worker(self):
         agents = Agents('info')
@@ -192,43 +210,43 @@ class RunnerTests(unittest.TestCase):
     def test_fixture_cannot_publish(self):
         self.assertEqual(self.run_task(fixture=True)['status'], 'ready')
         with self.assertRaisesRegex(ValueError, 'Fixture'):
-            publish(self.path, self.url, self.runs, self.provider)
+            publish(self.publish_config, self.url, self.publish_runs, self.provider)
 
     def test_changed_issue_and_target_stop_publication(self):
         self.run_task()
         self.provider.current_issue['description'] = 'different'
         with self.assertRaisesRegex(ValueError, 'Issue changed'):
-            publish(self.path, self.url, self.runs, self.provider)
+            publish(self.publish_config, self.url, self.publish_runs, self.provider)
         self.provider.current_issue = copy.deepcopy(self.issue)
         self.provider.baseline = '0' * 40
         with self.assertRaisesRegex(ValueError, 'Target branch'):
-            publish(self.path, self.url, self.runs, self.provider)
+            publish(self.publish_config, self.url, self.publish_runs, self.provider)
         self.assertEqual(self.provider.commits, 0)
 
     def test_ambiguous_mr_creation_is_resumed_without_duplicate(self):
         self.run_task()
         self.provider.lost_mr_response = True
         with self.assertRaisesRegex(ValueError, 'lost MR'):
-            publish(self.path, self.url, self.runs, self.provider)
-        result = publish(self.path, self.url, self.runs, self.provider)
+            publish(self.publish_config, self.url, self.publish_runs, self.provider)
+        result = publish(self.publish_config, self.url, self.publish_runs, self.provider)
         self.assertEqual(result['status'], 'published')
         self.assertEqual(self.provider.commits, 1)
         self.assertEqual(len(self.provider.mrs), 1)
 
     def test_tampered_patch_stops_publication(self):
         self.run_task()
-        folder = task_dir(self.runs, self.c, 1) / 'attempt-1'
+        folder = task_dir(self.publish_runs, self.c, 1) / 'attempt-1'
         with (folder / 'change.patch').open('ab') as stream:
             stream.write(b'tamper')
         with self.assertRaisesRegex(ValueError, 'digest'):
-            publish(self.path, self.url, self.runs, self.provider)
+            publish(self.publish_config, self.url, self.publish_runs, self.provider)
 
     def test_wrong_reviewer_readback_stops(self):
         self.run_task()
-        publish(self.path, self.url, self.runs, self.provider)
+        publish(self.publish_config, self.url, self.publish_runs, self.provider)
         self.provider.mrs[0]['reviewers'] = []
         with self.assertRaisesRegex(ValueError, 'readback'):
-            publish(self.path, self.url, self.runs, self.provider)
+            publish(self.publish_config, self.url, self.publish_runs, self.provider)
 
     def test_issue_url_allowlist(self):
         for url in (self.url + '?x=1', self.url.replace('gitlab.example.com', 'attacker.invalid'),
@@ -299,7 +317,7 @@ class RunnerTests(unittest.TestCase):
         save(self.path, self.c)
         state = self.run_task(BinaryReview())
         self.assertEqual(state['status'], 'ready', state)
-        self.assertEqual(publish(self.path, self.url, self.runs, self.provider)['status'], 'published')
+        self.assertEqual(publish(self.publish_config, self.url, self.publish_runs, self.provider)['status'], 'published')
         self.assertFalse((self.repo / 'value.txt').exists())
         self.assertEqual((self.repo / 'image.bin').read_bytes(), bytes(range(256)))
         self.assertTrue((self.repo / 'entry.sh').stat().st_mode & 0o111)

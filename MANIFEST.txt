@@ -16,6 +16,7 @@ SHA256SUMS
 VALIDATION.md
 VERSION
 docs/AUTOMATION.md
+docs/EXECUTION_BOUNDARY.md
 docs/EXECUTION_SPEC.md
 docs/INSTALL_LOCAL.md
 docs/ROLLOUT_CHECKLIST.md
@@ -35,7 +36,10 @@ sanakan/__init__.py
 sanakan/__main__.py
 sanakan/agents.py
 sanakan/common.py
+sanakan/errors.py
+sanakan/execution.py
 sanakan/gitlab.py
+sanakan/handoff.py
 sanakan/policy.py
 sanakan/publisher.py
 sanakan/runner.py
@@ -71,6 +75,7 @@ templates/scripts/verify.sh
 tests/test_automation.py
 tests/test_runner.py
 tests/test_service.py
+tests/test_stabilization.py
 tools/build_plugin.py
 tools/build_release.py
 tools/validate_package.py

@@ -3,12 +3,12 @@ import argparse
 import json
 import os
 import sys
-from .agents import CodexAgents
+from .execution import agents_for
 from .common import config, safe
 from .gitlab import GitLab
 from .publisher import publish
 from .runner import run
-from . import service
+from . import service, handoff
 
 
 def main():
@@ -33,15 +33,31 @@ def main():
             p.add_argument('--role', choices=(*service.ROLES, 'all'), default='all')
         if command == 'retry':
             p.add_argument('--iid', type=int, required=True)
+            p.add_argument('--mode', choices=('auto', 'publish', 'revalidate'), default='auto')
+    for command in ('export', 'import'):
+        p = sub.add_parser(command)
+        p.add_argument('--config', required=True)
+        p.add_argument('--runs', required=True)
+        if command == 'export':
+            p.add_argument('--issue', required=True)
+        else:
+            p.add_argument('--packet', required=True)
     args = parser.parse_args()
     try:
+        if args.command == 'export':
+            print(handoff.export_run(args.config, args.issue, args.runs))
+            return 0
+        if args.command == 'import':
+            path, state, generation = handoff.import_run(args.config, args.packet, args.runs)
+            print(json.dumps({'config': str(path), 'status': state['status'], 'generation': generation}))
+            return 0
         if args.command in {'status', 'stop', 'retry', 'start'}:
             if args.command == 'status':
                 result = service.status(args.config, args.runs)
             elif args.command == 'stop':
                 result = service.stop(args.config, args.runs, args.role)
             elif args.command == 'retry':
-                result = service.retry(args.config, args.runs, args.iid)
+                result = service.retry(args.config, args.runs, args.iid, args.mode)
             else:
                 result = service.start(args.config, args.runs, args.role)
             print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -65,7 +81,7 @@ def main():
             token = os.environ.get('SANAKAN_READ_TOKEN', '')
             if fixture is None and not token:
                 raise ValueError('SANAKAN_READ_TOKEN required for GitLab issue reads')
-            result = run(args.config, args.issue, args.runs, CodexAgents(c['timeout_seconds']),
+            result = run(args.config, args.issue, args.runs, agents_for(c),
                          GitLab(c['gitlab_url'], c['project_id'], token), fixture)
         else:
             token = os.environ.get('SANAKAN_PUBLISH_TOKEN')

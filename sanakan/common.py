@@ -23,6 +23,12 @@ def digest(value):
     return hashlib.sha256(value).hexdigest()
 
 
+def run_identity(c, issue):
+    # Machine-specific source paths may differ across the authenticated handoff.
+    policy = {k: v for k, v in c.items() if k != 'repo_path'}
+    return digest(json.dumps({'config': policy, 'issue': issue}, sort_keys=True).encode())
+
+
 def save(path, value):
     path = Path(path)
     temp = path.with_suffix(path.suffix + '.tmp')
@@ -65,7 +71,7 @@ def process(argv, cwd, timeout=60, data=None, log=None, agent=False):
 
 
 def git(repo, *args, data=None):
-    argv = ['git', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false',
+    argv = ['git', '--no-replace-objects', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false',
             '-c', 'core.autocrlf=false', '-C', str(repo), *args]
     code, result = process(argv, repo, data=data)
     if code:
@@ -74,10 +80,14 @@ def git(repo, *args, data=None):
 
 
 def checkout(source, baseline, target):
-    # Do not copy local hooks/config or share objects with the worker.
-    git(target.parent, 'clone', '--no-local', '--no-checkout', '--', str(source), str(target))
+    # Fetch the exact commit, including commits reachable only from remote-tracking
+    # refs or FETCH_HEAD in the source clone. Never share its object store/config.
+    baseline = safe.sha(baseline)
+    source = Path(source).resolve(strict=True)
+    object_format = git(source, 'rev-parse', '--show-object-format').decode().strip()
+    git(target.parent, 'init', '--object-format=' + object_format, str(target))
+    git(target, 'fetch', '--no-tags', '--', str(source), baseline)
     git(target, 'checkout', '--detach', baseline)
-    git(target, 'remote', 'remove', 'origin')
 
 
 def config(path, allow_expired=False):
@@ -85,7 +95,7 @@ def config(path, allow_expired=False):
     required = {'gitlab_url', 'project_path', 'project_id', 'repo_path', 'baseline', 'target_branch',
                 'allowed_author_ids', 'reviewer_ids', 'allowed_paths', 'checks', 'max_attempts',
                 'timeout_seconds', 'max_patch_bytes', 'expires_at'}
-    if type(c) is not dict or not required <= set(c) or set(c) - required - {'publication', 'automation'}:
+    if type(c) is not dict or not required <= set(c) or set(c) - required - {'publication', 'automation', 'execution'}:
         raise ValueError('Unknown or missing configuration fields')
     u = urlsplit(c['gitlab_url'])
     if u.scheme != 'https' or not u.hostname or u.username or u.password or u.query or u.fragment or u.path:
@@ -128,6 +138,9 @@ def config(path, allow_expired=False):
             raise ValueError('Work branch must differ from target')
     if 'automation' in c:
         validate_automation(c['automation'])
+    if 'execution' in c:
+        from .execution import validate_execution
+        validate_execution(c['execution'])
     return c
 
 

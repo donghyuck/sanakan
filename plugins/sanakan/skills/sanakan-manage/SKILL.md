@@ -21,6 +21,12 @@ Use `examples/runner/automation-project.json` in the tool checkout as a source e
 a packaged plugin also includes it under `assets/automation-project.json`.
 The example expiration and commit are placeholders that must be replaced.
 
+Automatic services require execution.backend=docker, a preinstalled digest-pinned image, and
+SANAKAN_HANDOFF_DIR / SANAKAN_HANDOFF_KEY_FILE on both trusted hosts. The key file must be private
+(chmod 600); never mount it in executors. Use distinct private run stores for develop and publish.
+Local run results are development-only and cannot be exported/published.
+Read the packaged assets/EXECUTION_BOUNDARY.md for setup and migration from 1.4.
+
 Check `status` before starting a second process. Development and publication are separate roles:
 - `start --role develop`: requires SANAKAN_READ_TOKEN and Codex authentication; reject a publish token.
 - `start --role publish`: requires SANAKAN_PUBLISH_TOKEN in the separate trusted publisher environment.
@@ -45,6 +51,8 @@ subprocess may run until it exits or times out. Confirm `running: false` before 
 `retry` requeues failed development in a new generation and preserves old artifacts. Publication
 retry reuses the verified patch and queries existing branch/MR state; never force push or clear
 state to bypass an error. Retry only the requested issue after examining the recorded reason.
+For needs_revalidation, stop both watchers and confirm they have stopped, then run retry --mode revalidate on the development store to create a fresh generation.
+Do not keep retrying the old publication or revalidate on the publisher.
 Published jobs are not reimplemented by retry. Changed policies or issue revisions need fresh validation.
 
 ## Report

@@ -1,6 +1,6 @@
 # Sanakan — Codex 에이전트 협업 자동화 코딩 도구
 
-**개발 버전 1.4.0 · 2026-09-21**
+**개발 버전 1.5.0 · 2026-09-22**
 
 Sanakan은 GitLab 이슈를 받아 Codex 에이전트가 계획·개발·검증·독립 리뷰를 수행하고,
 Draft MR을 생성해 사람에게 리뷰를 요청하는 도구를 개발하는 프로젝트입니다.
@@ -10,7 +10,7 @@ Draft MR을 생성해 사람에게 리뷰를 요청하는 도구를 개발하는
 
 **한 번 설정하면, 새 이슈를 주기적으로 확인해 개발하고 Draft MR까지 생성합니다.**
 
-1. [자동화 설정 예시](examples/runner/automation-project.json)에 대상 프로젝트·허용 범위·검증·리뷰어와 형식 정책을 지정합니다.
+1. [격리 실행과 결과 전달](docs/EXECUTION_BOUNDARY.md)을 준비하고 [자동화 설정 예시](examples/runner/automation-project.json)에 대상 프로젝트·허용 범위·검증·리뷰어와 형식 정책을 지정합니다.
 2. 개발 전용 환경에서 `start --role develop`으로 감시를 시작합니다.
 3. 별도 게시 환경에서 `start --role publish`로 완료 결과의 MR 게시를 시작합니다.
 4. 이후에는 이슈를 등록하고 생성된 MR을 리뷰합니다. `status`, `stop`, `retry`로 관리합니다.
@@ -81,7 +81,8 @@ env -u SANAKAN_READ_TOKEN -u SANAKAN_PUBLISH_TOKEN \
 - `publication`: 작업 브랜치·커밋 메시지·MR 제목/본문 템플릿과 실제 게시 결과 검사.
 - `plugins/sanakan`: Codex 관리 스킬과 CLI runtime을 묶는 플러그인 배포 소스.
 
-실제 Codex/GitLab 운영 실증은 아직 수행하지 않았습니다. 개발·검증과 게시 환경의 격리가 필요합니다.
+임시 Git 저장소에서 실제 Codex 개발·검증·리뷰를 확인했습니다. Docker 실행 및 실제 GitLab 실증은 아직 미수행입니다.
+자동 게시에는 Docker 격리 실행과 signed 결과 전달이 필요하며, 로컬 개발 결과는 게시할 수 없습니다.
 Webhook, 다중 호스트 분산 실행, 사람 리뷰 댓글 기반 후속 수정, 자동 병합은 후속 범위입니다.
 
 ## 로컬 검증

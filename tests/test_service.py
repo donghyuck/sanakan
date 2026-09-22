@@ -10,7 +10,7 @@ from unittest.mock import patch
 from test_runner import Agents, Provider
 import test_runner as fixtures
 from sanakan import service
-from sanakan.common import config, save, task_dir
+from sanakan.common import config, save, task_dir, process
 from sanakan.policy import DEFAULT_POLICY, validate_policy
 
 
@@ -25,21 +25,28 @@ class ServiceTests(unittest.TestCase):
     def prepare(self, **overrides):
         self.c['automation'] = dict(poll_seconds=1, required_labels=[], baseline_mode='pinned',
                                     fetch_source=False, max_publish_attempts=2, **overrides)
+        self.c['execution'] = {'backend': 'docker', 'image': 'fixture@sha256:' + 'a'*64, 'agent_network': 'model-test'}
+        fake_container = patch('sanakan.execution.container', side_effect=lambda execution, workspace, command, timeout, log, **kw: process(command, workspace, timeout, log=log))
+        fake_container.start(); self.addCleanup(fake_container.stop)
+        self.pubruns = self.root / 'publisher-runs'
+        self.pubbase = service.directory(self.pubruns, self.c)
+        self.last_role = 'develop'
         save(self.path, self.c)
         self.provider = PollProvider(self.issue, self.repo, self.baseline)
         self.agents = Agents()
         self.base = service.directory(self.runs, self.c)
 
     def poll(self, role):
-        return service.watch(self.path, self.runs, role, self.provider, self.agents, once=True)
+        self.last_role = role
+        return service.watch(self.path, self.runs if role == 'develop' else self.pubruns, role, self.provider, self.agents, once=True)
 
     def job(self):
-        return service.jobs(self.base)['1']
+        return service.jobs(self.base if self.last_role == 'develop' else self.pubbase)['1']
 
     def test_issue_to_mr_automatically_and_no_duplicate(self):
         self.prepare()
         self.poll('develop')
-        self.assertEqual(self.job()['status'], 'ready')
+        self.assertEqual(self.job()['status'], 'handed_off')
         self.poll('publish')
         self.assertEqual(self.job()['status'], 'published')
         self.poll('develop')
@@ -55,7 +62,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(service.jobs(self.base), {})
         self.provider.current_issue['state'] = 'opened'
         self.poll('develop')
-        self.assertEqual(self.job()['status'], 'ready')
+        self.assertEqual(self.job()['status'], 'handed_off')
 
     def test_project_formats_and_local_work_branch(self):
         self.prepare()
@@ -89,7 +96,7 @@ class ServiceTests(unittest.TestCase):
         self.assertFalse(service.jobs(self.base))
         self.provider.current_issue['labels'] = ['ai:ready']
         self.poll('develop')
-        self.assertEqual(self.job()['status'], 'ready')
+        self.assertEqual(self.job()['status'], 'handed_off')
         self.provider.current_issue['labels'] = []
         self.poll('publish')
         self.assertEqual(self.job()['status'], 'publish_retry')
@@ -115,7 +122,7 @@ class ServiceTests(unittest.TestCase):
             self.poll('publish')
         self.assertEqual(self.job()['publish_attempts'], 2)
         self.assertEqual(self.job()['status'], 'publish_failed')
-        service.retry(self.path, self.runs, 1)
+        service.retry(self.path, self.pubruns, 1)
         self.poll('publish')
         self.assertEqual(self.job()['status'], 'published')
 
@@ -131,7 +138,7 @@ class ServiceTests(unittest.TestCase):
         self.agents = Agents()
         self.poll('develop')
         self.assertEqual(self.job()['generation'], 2)
-        self.assertEqual(self.job()['status'], 'ready')
+        self.assertEqual(self.job()['status'], 'handed_off')
         self.assertTrue(old_config.exists())
         self.assertTrue((task_dir(old_runs, self.c, 1) / 'state.json').exists())
 
@@ -189,8 +196,7 @@ class ServiceTests(unittest.TestCase):
         self.c['reviewer_ids'] = [99]
         save(self.path, self.c)
         self.poll('publish')
-        self.assertEqual(self.job()['status'], 'publish_retry')
-        self.assertIn('policy changed', self.job()['reason'])
+        self.assertIn('policy changed', str(service.status(self.path, self.pubruns)['handoff_errors']))
         self.assertEqual(self.provider.commits, 0)
 
     def test_baseline_target_snapshot_and_fetch_origin_restriction(self):

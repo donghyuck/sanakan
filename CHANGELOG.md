@@ -1,5 +1,14 @@
 # 변경 이력
 
+## 1.5.0 — 2026-09-22
+
+- 원격 추적 ref/FETCH_HEAD의 commit도 정확한 SHA fetch로 작업공간에 전달한다.
+- 각 검증 명령 뒤 HEAD/index/소스 상태를 검사하고 소스 변경을 성공으로 처리하지 않는다.
+- stale publication을 needs_revalidation으로 분리하고 개발 호스트의 retry --mode revalidate로 새 generation을 만든다.
+- 자동 실행은 Docker backend로 제한하고 로컬 개발 결과의 게시를 차단한다.
+- HMAC 인증 packet과 기준 Git bundle을 사용해 서로 다른 private run 저장소 간 export/import를 연결한다.
+- 실제 Codex 임시 저장소 실증을 수행했다. Docker 데몬/GitLab 실환경 검증은 미수행이다.
+
 ## 1.4.0 — 2026-09-21
 
 - 주기적 이슈 조회와 ready 결과 게시를 분리한 watch/start 및 status/stop/retry CLI를 추가했다.

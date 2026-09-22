@@ -37,6 +37,7 @@ def main():
     args = parser.parse_args()
     required = ["AGENTS.md", "sanakan/__main__.py", "sanakan/runner.py",
                 "sanakan/publisher.py", "sanakan/service.py", "sanakan/policy.py",
+                "sanakan/execution.py", "sanakan/handoff.py", "tests/test_stabilization.py", "docs/EXECUTION_BOUNDARY.md",
                 "plugins/sanakan/.codex-plugin/plugin.json", "plugins/sanakan/skills/sanakan-manage/SKILL.md",
                 "tools/build_plugin.py", "tests/test_service.py", "docs/AUTOMATION.md", "docs/EXECUTION_SPEC.md", "docs/RUNNER.md", "tests/test_runner.py",
                 ".gitattributes", ".gitignore", ".github/workflows/validate-guide.yml",

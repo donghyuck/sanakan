@@ -44,5 +44,10 @@
     "commit": "[ai-assisted] fix: issue #{iid} {title}\n\nIssue: {issue_url}\nWhy: {title}\nWhat: {summary}\nValidation:\n{verification}",
     "mr_title": "Draft: #{iid} {title}",
     "mr_body": "## Why\n\n{issue_url}\n\n## What\n\n{summary}\n\n{changed_files}\n\n## Validation\n\n{verification}\n\nBaseline: `{baseline}`\nPatch SHA-256: `{patch_sha256}`\n\nIndependent review: {review_summary}\n\n## Risk / Rollback\n\n{rollback}\n\n## AI / Subagent Usage\n\nMain, worker and reviewer ran in separate Codex sessions. Human review and merge required.\n"
+  },
+  "execution": {
+    "backend": "docker",
+    "image": "registry.example.com/sanakan-runner@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "agent_network": "sanakan-model-egress"
   }
 }

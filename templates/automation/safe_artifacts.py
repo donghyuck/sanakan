@@ -125,7 +125,7 @@ def git(repo, *args, data=None, env=None):
     clean_env["GIT_LITERAL_PATHSPECS"] = "1"
     if env is not None and "GIT_INDEX_FILE" in env:
         clean_env["GIT_INDEX_FILE"] = env["GIT_INDEX_FILE"]
-    result = subprocess.run(["git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
+    result = subprocess.run(["git", "--no-replace-objects", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
                              "-C", str(repo), *args], input=data, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, env=clean_env)
     if result.returncode:

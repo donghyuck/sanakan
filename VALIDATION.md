@@ -1,3 +1,35 @@
+# Sanakan 1.5.0 안정화 검증
+
+검증일: 2026-09-22.
+
+## 실제 Codex 로컬 실증
+
+- 사용자 승인에 따라 외부 프로젝트 대신 원격 없는 임시 Git 저장소를 만들었다.
+- add(a,b)가 뺄셈을 수행하는 작은 버그와 실패하는 unittest를 제공했다.
+- 실제 Codex CLI 0.139.0의 메인·개발·리뷰 세션을 실행했다.
+- value.py만 변경, 독립 unittest 종료 코드 0, review pass/blocking_count 0, 최종 ready를 확인했다.
+- 원본 저장소의 버그 코드는 그대로 보존됐다. GitLab 요청/게시/토큰은 사용하지 않았다.
+- 이 실증은 local backend이며 Docker 실행 증거가 아니고 게시할 수 없다.
+
+## 회귀 검증 범위
+
+- 전체 72개 테스트 통과 후 명시적 publish 재시도 거절 회귀를 추가했고, 안정화 테스트 10개도 통과했다. 합계 73개 검증.
+
+- 최신 SHA 전달: 원본 HEAD가 뒤처진 fetch-only commit을 별도 작업공간에 전달한다.
+- 검증 중 소스 변경: 테스트 종료 코드가 0이어도 ready를 거절한다.
+- 명령 사이의 중지, Docker mount/network/credential 인자 및 timeout cleanup 계약을 검사한다.
+- local 결과 export/publish 차단, 별도 private 저장소의 signed handoff/import/게시,
+  변조 payload와 잘못된 키 거절, stale target의 재개발 generation을 검증한다.
+- 컨테이너/GitLab 응답은 모의 처리하며 실제 Git/프로세스/HMAC/번들 전송은 사용한다.
+
+## 남은 실환경 검증
+
+- Docker CLI는 있으나 데몬 연결에 실패해 실제 컨테이너의 파일/네트워크 차단은 미검증이다.
+- 승인 이미지, 모델 전용 egress 정책, 서로 다른 OS 계정의 공유 channel 권한을 준비해야 한다.
+- 실제 GitLab 인증·MR/reviewer·CI는 미검증이다. 운영 준비 완료로 판단하지 않는다.
+
+---
+
 # Sanakan 1.4.0 자동 개발 루프 검증
 
 - 이슈 목록 polling → 독립 Codex 역할 → 검증 → 형식화된 branch/commit/MR 게시를 연결했다.

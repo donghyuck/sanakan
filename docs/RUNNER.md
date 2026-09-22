@@ -8,6 +8,10 @@
 
 ## 준비
 
+1.5부터 게시에는 Docker 실행 결과의 signed export/import가 필수다.
+[실행 경계 가이드](EXECUTION_BOUNDARY.md)를 먼저 따른다. 아래 publish의 config는 import가 반환한 경로를 사용한다.
+개발과 게시가 같은 run 디렉터리를 공유하지 않는다.
+
 - Linux/macOS, Python 3.11+, Git, Bash와 신뢰된 로컬 소스 복제본.
 - 실제 에이전트 실행에는 인증된 Codex CLI가 필요하다. 로컬에서 0.139.0의 exec 도움말을 확인했다.
 - 개발 전용 계정/컨테이너에 Codex 인증만 제공하고 GitLab 쓰기 토큰/운영 비밀을 두지 않는다.
@@ -58,15 +62,16 @@ Codex CLI가 메인(read-only)·개발(workspace-write)·리뷰(read-only)를 �
 
 ## 2. 별도 환경에서 게시
 
-보호된 도구/동일 설정/검증 증거와 신뢰된 baseline 소스를 게시 환경에 제공한다.
+먼저 개발 결과를 export하고 게시 계정의 별도 private runs에 import한다.
+import가 반환한 config 경로에는 게시 계정의 기준 소스 위치가 들어 있다.
 게시 전용 토큰은 비밀 관리 도구로 `SANAKAN_PUBLISH_TOKEN`에만 주입한다.
 개발 프로세스가 종료한 후 신뢰된 작업 스케줄러가 이 단계를 실행하도록 연결할 수 있다.
 
 ```sh
 python3 -m sanakan publish \
-  --config /protected/project.json \
+  --config /path/returned/by/import/config.json \
   --issue https://gitlab.example.com/team/project/-/issues/123 \
-  --runs /var/lib/sanakan/runs
+  --runs /var/lib/sanakan-publish
 ```
 
 게시기는 gate를 다시 검사하고 이슈가 수정/종료됐거나 baseline이 이동하면 중단한다.

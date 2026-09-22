@@ -4,9 +4,10 @@ import json
 import tempfile
 import time
 from pathlib import Path
-from .common import checkout, check_issue, config, digest, git, issue_iid, locked, safe, save, task_dir
+from .common import checkout, check_issue, config, digest, git, issue_iid, locked, safe, save, task_dir, run_identity
 from .runner import gate
 from .policy import publication
+from .errors import RevalidationRequired
 
 
 def tree(repo, revision):
@@ -37,6 +38,9 @@ def actions(repo, baseline, final, changed):
 
 
 def publish(config_path, issue_url, root, provider, stop_requested=lambda: False):
+    raw = safe.load_json(config_path)
+    if raw['expires_at'] <= time.time():
+        raise RevalidationRequired('Project authorization expired')
     c = config(config_path)
     iid = issue_iid(c, issue_url)
     with locked(task_dir(root, c, iid)) as task:
@@ -46,12 +50,14 @@ def publish(config_path, issue_url, root, provider, stop_requested=lambda: False
             raise ValueError('Fixture runs cannot be published')
         if state['status'] not in {'ready', 'publishing', 'published'}:
             raise ValueError('Run is not ready to publish')
+        if not state.get('handoff_verified') or state.get('execution') != 'docker':
+            raise ValueError('Publication requires an authenticated isolated handoff')
         if safe.load_json(task / 'config.json') != c:
-            raise ValueError('Publication config differs from run config')
+            raise RevalidationRequired('Publication config differs from run config')
         issue = check_issue(c, iid, provider.issue(iid))
         if issue != safe.load_json(task / 'issue.json'):
-            raise ValueError('Issue changed after implementation; publication stopped')
-        key = digest(json.dumps({'config': c, 'issue': issue}, sort_keys=True).encode())
+            raise RevalidationRequired('Issue changed after implementation; publication stopped')
+        key = run_identity(c, issue)
         if key != state['key']:
             raise ValueError('Run identity mismatch')
         if type(state['attempt']) is not int or not 1 <= state['attempt'] <= c['max_attempts']:
@@ -65,13 +71,13 @@ def publish(config_path, issue_url, root, provider, stop_requested=lambda: False
             if stop_requested():
                 raise ValueError('Stop requested; publication stopped at a phase boundary')
             if c['expires_at'] <= time.time():
-                raise ValueError('Project authorization expired')
+                raise RevalidationRequired('Project authorization expired')
             current = check_issue(c, iid, provider.issue(iid))
             if current != issue:
-                raise ValueError('Issue changed during publication')
+                raise RevalidationRequired('Issue changed during publication')
             target = provider.branch(c['target_branch'])
             if not target or target['commit']['id'] != c['baseline']:
-                raise ValueError('Target branch advanced; rebase and revalidation required')
+                raise RevalidationRequired('Target branch advanced; rebase and revalidation required')
 
         check_current()
         formatted = publication(c, issue, issue_url,

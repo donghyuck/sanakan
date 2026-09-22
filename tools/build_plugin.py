@@ -24,6 +24,7 @@ def main():
         elif name.startswith(('sanakan/', 'templates/automation/')):
             entries['runtime/' + name] = ROOT / name
     entries['assets/automation-project.json'] = ROOT / 'examples/runner/automation-project.json'
+    entries['assets/EXECUTION_BOUNDARY.md'] = ROOT / 'docs/EXECUTION_BOUNDARY.md'
     entries['assets/AUTOMATION.md'] = ROOT / 'docs/AUTOMATION.md'
     with zipfile.ZipFile(target, 'x', compression=zipfile.ZIP_DEFLATED) as archive:
         for name, source in sorted(entries.items()):

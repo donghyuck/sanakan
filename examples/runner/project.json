@@ -5,12 +5,36 @@
   "repo_path": "/srv/sanakan/source",
   "baseline": "0000000000000000000000000000000000000000",
   "target_branch": "main",
-  "allowed_author_ids": [10],
-  "reviewer_ids": [20],
-  "allowed_paths": ["src/example.py", "tests/test_example.py"],
-  "checks": [{"id": "unit", "argv": ["python3", "-m", "unittest", "discover", "-s", "tests"]}],
+  "allowed_author_ids": [
+    10
+  ],
+  "reviewer_ids": [
+    20
+  ],
+  "allowed_paths": [
+    "src/example.py",
+    "tests/test_example.py"
+  ],
+  "checks": [
+    {
+      "id": "unit",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ]
+    }
+  ],
   "max_attempts": 2,
   "timeout_seconds": 600,
   "max_patch_bytes": 1048576,
-  "expires_at": 0
+  "expires_at": 0,
+  "execution": {
+    "backend": "docker",
+    "image": "registry.example.com/sanakan-runner@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "agent_network": "sanakan-model-egress"
+  }
 }
