@@ -10,7 +10,7 @@ def prompt_for(role, context):
     prompt += '\nYou are the ' + role + ' agent in a coordinated development run.\n'
     prompt += ('Use the host context below instead of requiring .agent files. Read existing AGENTS.md. '
                'Missing optional baseline/map documents are not permission to invent facts. '
-               'Do not commit, push, call GitLab, or alter the host evidence. '
+               'Do not commit, push, call GitHub/GitLab APIs, or alter the host evidence. '
                'The host invokes each role in a separate session. Do not spawn additional agents. '
                'On repair, address the previous verification/review feedback. '
                'A needs_human_review outcome stops automation.\n')

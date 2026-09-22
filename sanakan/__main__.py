@@ -5,7 +5,7 @@ import os
 import sys
 from .execution import agents_for
 from .common import config, safe
-from .gitlab import GitLab
+from .hosting import make_provider
 from .publisher import publish
 from .runner import run
 from . import service, handoff
@@ -71,7 +71,7 @@ def main():
             if args.role == 'develop' and os.environ.get('SANAKAN_PUBLISH_TOKEN'):
                 raise ValueError('Do not inject a publish token into development')
             result = service.watch(args.config, args.runs, args.role,
-                                   GitLab(c['gitlab_url'], c['project_id'], token), once=args.once)
+                                   make_provider(c, token), once=args.once)
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return 2 if result['services'][args.role].get('last_error') else 0
         if args.command == 'run':
@@ -80,14 +80,14 @@ def main():
             fixture = safe.load_json(args.issue_fixture) if args.issue_fixture else None
             token = os.environ.get('SANAKAN_READ_TOKEN', '')
             if fixture is None and not token:
-                raise ValueError('SANAKAN_READ_TOKEN required for GitLab issue reads')
+                raise ValueError('SANAKAN_READ_TOKEN required for hosted issue reads')
             result = run(args.config, args.issue, args.runs, agents_for(c),
-                         GitLab(c['gitlab_url'], c['project_id'], token), fixture)
+                         make_provider(c, token), fixture)
         else:
             token = os.environ.get('SANAKAN_PUBLISH_TOKEN')
             if not token:
                 raise ValueError('SANAKAN_PUBLISH_TOKEN required in the separate publisher environment')
-            result = publish(args.config, args.issue, args.runs, GitLab(c['gitlab_url'], c['project_id'], token))
+            result = publish(args.config, args.issue, args.runs, make_provider(c, token))
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result['status'] in {'ready', 'published'} else 2
     except (ValueError, OSError, KeyError, TypeError) as error:

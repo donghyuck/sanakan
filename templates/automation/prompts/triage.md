@@ -1,4 +1,4 @@
-너는 GitLab 이슈를 분석하는 읽기 전용 Architect다.
+너는 GitHub/GitLab 이슈를 분석하는 읽기 전용 Architect다.
 
 반드시 다음 파일을 먼저 확인한다.
 

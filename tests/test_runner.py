@@ -50,7 +50,10 @@ class Agents:
                     blocking_count=1 if block else 0, findings=[])
 
 
-class Provider:
+from sanakan.gitlab import GitLab
+
+
+class Provider(GitLab):
     def __init__(self, issue, repo, baseline):
         self.current_issue = copy.deepcopy(issue)
         self.repo = repo

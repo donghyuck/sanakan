@@ -11,6 +11,7 @@ import signal
 import subprocess
 import time
 from urllib.parse import urlsplit
+from .hosting import platform, origin, namespace, issue_prefix
 
 ROOT = Path(__file__).resolve().parents[1]
 AUTOMATION = ROOT / 'templates/automation'
@@ -92,16 +93,33 @@ def checkout(source, baseline, target):
 
 def config(path, allow_expired=False):
     c = safe.load_json(path)
-    required = {'gitlab_url', 'project_path', 'project_id', 'repo_path', 'baseline', 'target_branch',
-                'allowed_author_ids', 'reviewer_ids', 'allowed_paths', 'checks', 'max_attempts',
+    if not isinstance(c, dict):
+        raise ValueError('Project configuration must be an object')
+    provider = platform(c)
+    if provider not in {'github', 'gitlab'}:
+        raise ValueError('provider must be github or gitlab')
+    required = {'project_path', 'project_id', 'repo_path', 'baseline', 'target_branch',
+                'allowed_author_ids', 'allowed_paths', 'checks', 'max_attempts',
                 'timeout_seconds', 'max_patch_bytes', 'expires_at'}
-    if type(c) is not dict or not required <= set(c) or set(c) - required - {'publication', 'automation', 'execution'}:
+    required |= {'github_url', 'reviewers'} if provider == 'github' else {'gitlab_url', 'reviewer_ids'}
+    optional = {'publication', 'automation', 'execution', 'provider'}
+    if type(c) is not dict or not required <= set(c) or set(c) - required - optional:
         raise ValueError('Unknown or missing configuration fields')
-    u = urlsplit(c['gitlab_url'])
+    u = urlsplit(origin(c))
     if u.scheme != 'https' or not u.hostname or u.username or u.password or u.query or u.fragment or u.path:
-        raise ValueError('gitlab_url must be an HTTPS origin without path or credentials')
+        raise ValueError('Platform URL must be an HTTPS origin without path or credentials')
     if not re.fullmatch(r'[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+', c['project_path']):
         raise ValueError('Invalid project path')
+    if any(part in {'.', '..'} for part in c['project_path'].split('/')):
+        raise ValueError('Invalid project path segment')
+    if provider == 'github':
+        if len(c['project_path'].split('/')) != 2 or origin(c) != 'https://github.com':
+            raise ValueError('GitHub currently supports github.com owner/repository projects')
+        values = c['reviewers']
+        if not isinstance(values, list) or not values or any(not isinstance(v, str) or not re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})', v) for v in values):
+            raise ValueError('reviewers must contain GitHub user logins')
+        if len({v.lower() for v in values}) != len(values):
+            raise ValueError('Duplicate GitHub reviewers')
     safe.sha(c['baseline'])
     for name in ('project_id', 'max_attempts', 'timeout_seconds', 'max_patch_bytes', 'expires_at'):
         if type(c[name]) is not int or c[name] < 1:
@@ -110,7 +128,7 @@ def config(path, allow_expired=False):
         raise ValueError('Pilot limit: at most 5 attempts and 3600 seconds per command')
     if not allow_expired and c['expires_at'] <= time.time():
         raise ValueError('Project authorization expired')
-    for name in ('allowed_author_ids', 'reviewer_ids'):
+    for name in (('allowed_author_ids',) if provider == 'github' else ('allowed_author_ids', 'reviewer_ids')):
         if not isinstance(c[name], list) or not c[name] or any(type(i) is not int or i < 1 for i in c[name]):
             raise ValueError('Expected positive user IDs: ' + name)
     if not isinstance(c['allowed_paths'], list) or not c['allowed_paths']:
@@ -160,7 +178,7 @@ def validate_automation(a):
 
 
 def issue_iid(c, url):
-    prefix = c['gitlab_url'] + '/' + c['project_path'] + '/-/issues/'
+    prefix = issue_prefix(c)
     if not url.startswith(prefix) or not re.fullmatch(r'[1-9][0-9]*', url[len(prefix):]):
         raise ValueError('Issue URL is outside the configured project or is noncanonical')
     return int(url[len(prefix):])
@@ -194,5 +212,5 @@ def task_dir(root, c, iid):
     root = Path(root).resolve()
     if root.is_relative_to(Path(c['repo_path'])):
         raise ValueError('Run storage must be outside the source repository')
-    identity = digest((c['gitlab_url'] + '/' + c['project_path']).encode())[:16]
+    identity = digest(namespace(c).encode())[:16]
     return root / (identity + '-' + str(iid))

@@ -23,13 +23,15 @@ def main():
             entries[name.removeprefix('plugins/sanakan/')] = ROOT / name
         elif name.startswith(('sanakan/', 'templates/automation/')):
             entries['runtime/' + name] = ROOT / name
+    entries['assets/github-project.json'] = ROOT / 'examples/runner/github-project.json'
+    entries['assets/GITHUB.md'] = ROOT / 'docs/GITHUB.md'
     entries['assets/automation-project.json'] = ROOT / 'examples/runner/automation-project.json'
     entries['assets/EXECUTION_BOUNDARY.md'] = ROOT / 'docs/EXECUTION_BOUNDARY.md'
     entries['assets/AUTOMATION.md'] = ROOT / 'docs/AUTOMATION.md'
     with zipfile.ZipFile(target, 'x', compression=zipfile.ZIP_DEFLATED) as archive:
         for name, source in sorted(entries.items()):
-            if name == 'assets/AUTOMATION.md':
-                content = source.read_text().replace('../examples/runner/automation-project.json', 'automation-project.json')
+            if name in {'assets/AUTOMATION.md', 'assets/GITHUB.md'}:
+                content = source.read_text().replace('../examples/runner/automation-project.json', 'automation-project.json').replace('../examples/runner/github-project.json', 'github-project.json')
                 archive.writestr(name, content)
             else:
                 archive.write(source, name)

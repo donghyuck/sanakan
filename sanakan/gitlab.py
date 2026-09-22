@@ -69,3 +69,22 @@ class GitLab:
             if len(rows) < 100:
                 return list(result.values())
         raise ValueError('Issue listing exceeds pagination limit')
+
+    def create_commit(self, branch, baseline, message, actions):
+        return self.request('POST', '/repository/commits', {
+            'branch': branch, 'start_sha': baseline, 'commit_message': message, 'actions': actions})
+
+    def create_merge_request(self, branch, target, title, body, reviewers, draft=True):
+        return self.request('POST', '/merge_requests', {
+            'source_branch': branch, 'target_branch': target, 'title': title,
+            'description': body, 'reviewer_ids': reviewers, 'remove_source_branch': False})
+
+    def merge_request(self, iid):
+        return self.request('GET', '/merge_requests/' + str(iid))
+
+    def ensure_reviewers(self, iid, reviewers, draft=True):
+        # GitLab sets the reviewers in the create request; readback checks them.
+        return 'requested'
+
+    def reviewers_satisfied(self, mr, reviewers, draft=True):
+        return set(reviewers) <= {user['id'] for user in mr['reviewers']}

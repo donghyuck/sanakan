@@ -16,6 +16,7 @@ from .publisher import publish
 from .runner import run
 from .errors import RevalidationRequired
 from . import handoff
+from .hosting import origin, namespace, issue_prefix
 
 ROLES = ('develop', 'publish')
 
@@ -23,7 +24,7 @@ ROLES = ('develop', 'publish')
 def directory(root, c):
     # Keep services outside the source; namespace all state by the project, not PID.
     task_dir(root, c, 1)
-    identity = digest((c['gitlab_url'] + '/' + c['project_path']).encode())[:16]
+    identity = digest(namespace(c).encode())[:16]
     return Path(root).resolve() / 'services' / identity
 
 
@@ -60,7 +61,7 @@ def layout(base, job):
 
 
 def issue_url(c, iid):
-    return c['gitlab_url'] + '/' + c['project_path'] + '/-/issues/' + str(iid)
+    return issue_prefix(c) + str(iid)
 
 
 def snapshot(c, provider):
@@ -73,7 +74,7 @@ def snapshot(c, provider):
         if c['automation']['fetch_source']:
             # Fetch only from the configured project; never follow an issue-provided URL.
             remote = git(Path(c['repo_path']), 'remote', 'get-url', 'origin').decode().strip()
-            expected = c['gitlab_url'] + '/' + c['project_path']
+            expected = origin(c) + '/' + c['project_path']
             if remote not in {expected, expected + '.git'}:
                 raise ValueError('Automatic fetch requires the configured HTTPS project origin without credentials')
             git(Path(c['repo_path']), 'fetch', '--no-tags', 'origin', c['target_branch'])
@@ -193,7 +194,9 @@ def cycle(config_path, root, c, role, provider, agents=None, stopped=lambda: Fal
                 check_issue(c, iid, provider.issue(iid))
                 update(base, iid, status='publishing')
                 result = publish(settings, url, runs, provider, stop_requested=stopped)
-                update(base, iid, status='published', mr_url=result['mr_url'], reason='')
+                update(base, iid, status='published', mr_url=result['mr_url'],
+                       review_url=result.get('review_url', result['mr_url']),
+                       pr_url=result.get('pr_url'), review_status=result.get('review_status'), reason='')
             except RevalidationRequired as error:
                 update(base, iid, status='needs_revalidation', reason=str(error))
             except (ValueError, OSError, KeyError, TypeError) as error:

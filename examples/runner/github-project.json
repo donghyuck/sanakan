@@ -1,0 +1,54 @@
+{
+  "project_path": "team/project",
+  "project_id": 1,
+  "repo_path": "/srv/sanakan/source",
+  "baseline": "0000000000000000000000000000000000000000",
+  "target_branch": "main",
+  "allowed_author_ids": [
+    10
+  ],
+  "allowed_paths": [
+    "src/example.py",
+    "tests/test_example.py"
+  ],
+  "checks": [
+    {
+      "id": "unit",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ]
+    }
+  ],
+  "max_attempts": 2,
+  "timeout_seconds": 600,
+  "max_patch_bytes": 1048576,
+  "expires_at": 0,
+  "automation": {
+    "poll_seconds": 300,
+    "required_labels": [],
+    "baseline_mode": "target",
+    "fetch_source": false,
+    "max_publish_attempts": 3
+  },
+  "publication": {
+    "branch": "codex/issue-{iid}",
+    "commit": "[ai-assisted] fix: issue #{iid} {title}\n\nIssue: {issue_url}\nWhy: {title}\nWhat: {summary}\nValidation:\n{verification}",
+    "mr_title": "Draft: #{iid} {title}",
+    "mr_body": "## Why\n\n{issue_url}\n\n## What\n\n{summary}\n\n{changed_files}\n\n## Validation\n\n{verification}\n\nBaseline: `{baseline}`\nPatch SHA-256: `{patch_sha256}`\n\nIndependent review: {review_summary}\n\n## Risk / Rollback\n\n{rollback}\n\n## AI / Subagent Usage\n\nMain, worker and reviewer ran in separate Codex sessions. Human review and merge required.\n"
+  },
+  "execution": {
+    "backend": "docker",
+    "image": "registry.example.com/sanakan-runner@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "agent_network": "sanakan-model-egress"
+  },
+  "provider": "github",
+  "github_url": "https://github.com",
+  "reviewers": [
+    "reviewer-login"
+  ]
+}

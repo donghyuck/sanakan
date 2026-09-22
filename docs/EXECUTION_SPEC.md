@@ -2,7 +2,7 @@
 
 ## 제품 목표
 
-GitLab 이슈 등록 → 메인 에이전트 계획 → 개발 → 필수 검증 → 독립 AI 리뷰 →
+GitHub/GitLab 이슈 등록 → 메인 에이전트 계획 → 개발 → 필수 검증 → 독립 AI 리뷰 →
 필요한 수정 반복 → Draft MR 생성 및 사람 리뷰 요청을 여러 프로젝트에 적용한다.
 Sanakan은 이 절차를 실행하는 도구이며 가이드와 플러그인은 도구의 설정·배포 수단이다.
 
@@ -12,11 +12,11 @@ Sanakan은 이 절차를 실행하는 도구이며 가이드와 플러그인은 
 로컬 fixture 실행의 완료 기준은 ready와 검토 가능한 patch이며 GitLab/토큰/MR은 필요 없다.
 그다음 실제 GitLab 이슈와 게시기를 연결한다. 로컬 fixture 결과를 원격 게시 결과로 간주하지 않는다.
 
-## 1.5.0: 주기적 감시와 Codex 관리
+## 1.6.0: 주기적 감시와 Codex 관리
 
 [자동화 운영 가이드](AUTOMATION.md)의 develop/publish 감시기가 이슈 수신부터 MR 게시를 연결한다.
 브랜치·커밋·MR 형식 정책, 중지·재시도·재시작 상태 복구와 Codex 관리 스킬을 제공한다.
-기존 단일 이슈 실행도 유지한다. 실제 Codex 로컬 실증은 수행했고 Docker/GitLab 실증은 미수행이다.
+GitHub adapter와 GitLab adapter가 같은 검증·게시 계약을 사용한다. 기존 단일 이슈 실행도 유지한다. 실제 Codex 로컬 실증은 수행했고 Docker/GitLab 실증은 미수행이다.
 운영 경계는 [격리와 전달 계약](EXECUTION_BOUNDARY.md)을 따른다.
 
 ## 단일 작업 실행 계약

@@ -1,3 +1,22 @@
+# Sanakan 1.6.0 GitHub 지원 검증
+
+검증일: 2026-09-22.
+
+- 전체 회귀 테스트 85개 통과: 기존 73개와 GitHub 전용 12개.
+- GitLab과 같은 Draft/형식/검증/전달 계약을 GitHub adapter로 연결했다.
+- GitHub 전용 검증은 실제 임시 Git 객체와 signed handoff를 사용하며 GitHub HTTP 응답은 모의 처리한다.
+- 이슈 목록의 PR 제외, 저장소 ID·URL 확인, pagination, 토큰 header/redirect 차단,
+  binary/삭제/실행 비트 tree 생성, commit/ref/PR/reviewer 요청을 검사한다.
+- ref/PR/review 응답 유실 후 중복 없는 재시도, 이미 제출된 리뷰의 중복 요청 방지,
+  Draft 리뷰 요청 거절 시 실패 유지, 잘린 tree·다른 저장소 PR·혼합 provider 설정 거절을 확인한다.
+- 원격 PR은 남고 source branch만 지워진 경우 branch를 임의로 복원하지 않는다.
+
+실제 GitHub token·저장소 권한·Draft reviewer 요청·알림·CI는 아직 실증하지 않았다.
+studio-api의 지침/소스/원격 branch/PR은 이번 변경에서 수정하지 않았다.
+Docker 및 OS 계정 격리에 관한 이전 검증 경계는 유지한다.
+
+---
+
 # Sanakan 1.5.0 안정화 검증
 
 검증일: 2026-09-22.

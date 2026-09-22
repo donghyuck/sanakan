@@ -8,6 +8,7 @@ from .common import checkout, check_issue, config, digest, git, issue_iid, locke
 from .runner import gate
 from .policy import publication
 from .errors import RevalidationRequired
+from .hosting import reviewers, draft, platform
 
 
 def tree(repo, revision):
@@ -98,12 +99,12 @@ def publish(config_path, issue_url, root, provider, stop_requested=lambda: False
             save(state_path, state)
             branch = provider.branch(branch_name)
             if not branch:
+                if provider.merge_requests(branch_name):
+                    raise ValueError('Existing review request has no source branch; do not recreate it automatically')
                 check_current()
                 # One atomic commit creates the branch; never force or overwrite a branch.
-                provider.request('POST', '/repository/commits', {
-                    'branch': branch_name, 'start_sha': c['baseline'],
-                    'commit_message': formatted['commit'],
-                    'actions': actions(repo, c['baseline'], final, manifest['changed_files'])})
+                provider.create_commit(branch_name, c['baseline'], formatted['commit'],
+                                       actions(repo, c['baseline'], final, manifest['changed_files']))
                 branch = provider.branch(branch_name)
             commit = branch['commit']
             if formatted['commit'].strip() != commit['message'].strip() or commit['parent_ids'] != [c['baseline']]:
@@ -117,19 +118,28 @@ def publish(config_path, issue_url, root, provider, stop_requested=lambda: False
         if existing:
             mr = existing[0]
         else:
-            mr = provider.request('POST', '/merge_requests', {
-                'source_branch': branch_name, 'target_branch': c['target_branch'],
-                'title': formatted['mr_title'], 'description': formatted['mr_body'],
-                'reviewer_ids': c['reviewer_ids'], 'remove_source_branch': False})
+            mr = provider.create_merge_request(branch_name, c['target_branch'], formatted['mr_title'],
+                                               formatted['mr_body'], reviewers(c), draft=draft(c))
         # Re-read after both creation and retry, including ambiguous POST results.
-        mr = provider.request('GET', '/merge_requests/' + str(mr['iid']))
-        if (mr['state'] != 'opened' or mr['source_branch'] != branch_name or
-                mr['target_branch'] != c['target_branch'] or mr['sha'] != commit['id'] or
-                not mr['draft'] or mr['title'] != formatted['mr_title'] or
-                mr['description'] != formatted['mr_body'] or
-                not set(c['reviewer_ids']) <= {user['id'] for user in mr['reviewers']}):
-            raise ValueError('Merge request readback mismatch; human inspection required')
+        mr = provider.merge_request(mr['iid'])
+        def check_request(value):
+            if (value['state'] != 'opened' or value['source_branch'] != branch_name or
+                    value['target_branch'] != c['target_branch'] or value['sha'] != commit['id'] or
+                    value['draft'] != draft(c) or value['title'] != formatted['mr_title'] or
+                    value['description'] != formatted['mr_body']):
+                raise ValueError('Merge request readback mismatch; human inspection required')
+        check_request(mr)
+        # Never request reviews on a mismatched/foreign PR; resume this step after an ambiguous response.
         check_current()
+        review_status = provider.ensure_reviewers(mr['iid'], reviewers(c), draft=draft(c))
+        mr = provider.merge_request(mr['iid'])
+        check_request(mr)
+        if not provider.reviewers_satisfied(mr, reviewers(c), draft=draft(c)):
+            raise ValueError('Review request readback mismatch')
+        check_current()
+        state.update(review_status=review_status, review_url=mr['web_url'])
+        if platform(c) == 'github':
+            state['pr_url'] = mr['web_url']
         state.update(status='published', mr_url=mr['web_url'], commit=commit['id'])
         save(state_path, state)
         return state

@@ -1,5 +1,14 @@
 # 변경 이력
 
+## 1.6.0 — 2026-09-22
+
+- GitHub.com adapter와 provider 설정을 추가했다. provider 생략 시 기존 GitLab 동작을 유지한다.
+- GitHub 이슈/label/작성자 정규화, 저장소 숫자 ID 확인, PR 입력 제외, Draft PR 및 reviewer 요청/readback을 구현했다.
+- Git Data API로 blob/tree/commit과 새 ref를 생성하며 기존 ref 갱신/force push는 제공하지 않는다.
+- ref/PR/review 요청 응답 유실 후 중복 없는 재시도와 binary/삭제/실행 비트 변경을 검증한다.
+- GitLab과 같은 publication 형식 및 Docker/인증된 결과 전달 계약을 유지한다.
+- GitHub Enterprise/fork PR/team reviewer는 미지원이며 실제 계정 게시 실증은 아직 수행하지 않았다.
+
 ## 1.5.0 — 2026-09-22
 
 - 원격 추적 ref/FETCH_HEAD의 commit도 정확한 SHA fetch로 작업공간에 전달한다.

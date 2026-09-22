@@ -1,5 +1,7 @@
 # GitLab 연동 실행기 사용법
 
+GitHub 연동은 [GitHub 가이드](GITHUB.md)를 따른다.
+
 기존 로컬 Git 프로젝트의 첫 적용은 [로컬 설치·테스트 가이드](INSTALL_LOCAL.md)를 먼저 따른다.
 이 문서는 로컬 실증 이후 실제 GitLab 이슈 읽기와 MR 게시를 연결하는 단계다.
 

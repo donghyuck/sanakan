@@ -18,6 +18,7 @@ VERSION
 docs/AUTOMATION.md
 docs/EXECUTION_BOUNDARY.md
 docs/EXECUTION_SPEC.md
+docs/GITHUB.md
 docs/INSTALL_LOCAL.md
 docs/ROLLOUT_CHECKLIST.md
 docs/RUNNER.md
@@ -26,6 +27,7 @@ docs/images/local-run.svg
 docs/images/local-setup.svg
 examples/java11-spring-vue3/STACK_NOTES.md
 examples/runner/automation-project.json
+examples/runner/github-project.json
 examples/runner/local-issue.json
 examples/runner/local-project.json
 examples/runner/project.json
@@ -38,8 +40,10 @@ sanakan/agents.py
 sanakan/common.py
 sanakan/errors.py
 sanakan/execution.py
+sanakan/github.py
 sanakan/gitlab.py
 sanakan/handoff.py
+sanakan/hosting.py
 sanakan/policy.py
 sanakan/publisher.py
 sanakan/runner.py
@@ -73,6 +77,7 @@ templates/docs/codex/PROJECT_MAP.template.md
 templates/frontend/AGENTS.md
 templates/scripts/verify.sh
 tests/test_automation.py
+tests/test_github.py
 tests/test_runner.py
 tests/test_service.py
 tests/test_stabilization.py
