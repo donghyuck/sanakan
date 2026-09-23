@@ -120,7 +120,7 @@ def run(config_path, issue_url, root, agents, provider=None, fixture=None, stop_
                 if implementation['status'] == 'failed':
                     feedback = {'implementation': implementation}
                     continue
-                if implementation['status'] != 'completed':
+                if implementation['status'] not in {'completed', 'implemented'}:
                     transition('needs_human', reason='Worker did not complete', questions=implementation['pm_questions'])
                     return state
                 transition('collecting')
@@ -132,12 +132,26 @@ def run(config_path, issue_url, root, agents, provider=None, fixture=None, stop_
                 git(verify_workspace, 'apply', '--index', str(folder / 'change.patch'))
                 transition('verifying')
                 verification = verify(c, verify_workspace, folder, manifest, stop_requested)
-                context.update(implementation=implementation, verification=verification,
+                context.update(implementation=implementation, verification=verification, manifest=manifest,
                                patch=str(folder / 'change.patch'), patch_sha256=manifest['patch_sha256'])
                 if verification['status'] != 'passed':
                     feedback = {'verification': verification,
                                 'logs': [str(folder / ('check-' + str(i) + '.log')) for i in range(len(c['checks']))]}
                     continue
+                if implementation['status'] == 'implemented':
+                    # Keep the original incomplete report. The host never rewrites
+                    # failure/pending assertions into a fabricated success report.
+                    save(folder / 'implementation-draft.json', implementation)
+                    transition('reporting')
+                    implementation = agents.run('worker-report', verify_workspace,
+                                                folder / 'implementation.json', context)
+                    safe.validate(implementation, safe.load_json(AUTOMATION / 'schemas/implementation-schema.json'))
+                    save(folder / 'implementation.json', implementation)
+                    if implementation['status'] != 'completed':
+                        transition('needs_human', reason='Completion report has unresolved acceptance criteria',
+                                   questions=implementation['pm_questions'])
+                        return state
+                    context['implementation'] = implementation
                 review_workspace = folder / 'review'
                 checkout(c['repo_path'], c['baseline'], review_workspace)
                 git(review_workspace, 'apply', '--index', str(folder / 'change.patch'))

@@ -70,7 +70,7 @@ class DockerAgents:
 
     def run(self, role, workspace, output, context):
         from .agents import prompt_for
-        schema = {'main': 'triage', 'worker': 'implementation', 'reviewer': 'review'}[role]
+        schema = {'main': 'triage', 'worker': 'implementation', 'worker-report': 'implementation', 'reviewer': 'review'}[role]
         with tempfile.TemporaryDirectory(prefix='sanakan-agent-') as td:
             root = Path(td)
             inputs, outputs = root / 'input', root / 'output'

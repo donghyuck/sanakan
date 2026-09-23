@@ -3,9 +3,8 @@
 반드시 다음을 확인한다.
 
 - AGENTS.md와 관련 하위 AGENTS.md
-- .agent/issue.json
-- .agent/triage.json
-- .agent/implementation.json
+- 보호된 호스트 컨텍스트의 issue, triage, implementation
+- 호스트 컨텍스트가 없는 단독 실행에서만 같은 이름의 .agent/*.json을 사용한다.
 - 보호된 orchestrator가 전달한 불변 patch 파일과 manifest
 - 같은 baseline에서 그 patch만 적용한 독립 checkout의 관련 호출 흐름
 - 보호된 필수 검증 정책과 독립 runner의 검증 결과

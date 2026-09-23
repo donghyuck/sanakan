@@ -12,7 +12,7 @@ Sanakan은 이 절차를 실행하는 도구이며 가이드와 플러그인은 
 로컬 fixture 실행의 완료 기준은 ready와 검토 가능한 patch이며 GitLab/토큰/MR은 필요 없다.
 그다음 실제 GitLab 이슈와 게시기를 연결한다. 로컬 fixture 결과를 원격 게시 결과로 간주하지 않는다.
 
-## 1.6.0: 주기적 감시와 Codex 관리
+## 1.7.0: 주기적 감시와 Codex 관리
 
 [자동화 운영 가이드](AUTOMATION.md)의 develop/publish 감시기가 이슈 수신부터 MR 게시를 연결한다.
 브랜치·커밋·MR 형식 정책, 중지·재시도·재시작 상태 복구와 Codex 관리 스킬을 제공한다.
@@ -35,7 +35,7 @@ GitHub adapter와 GitLab adapter가 같은 검증·게시 계약을 사용한다
 
 ## 실행 상태
 
-`starting → planning → implementing → collecting → verifying → reviewing → ready`
+`starting → planning → implementing → collecting → verifying → reporting(implemented 인계 시) → reviewing → ready`
 
 - 테스트/리뷰 실패: 다음 attempt의 planning으로 복귀.
 - 정보 부족·고위험·개발 차단·수정 한도 도달: `needs_human`.

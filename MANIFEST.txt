@@ -23,6 +23,7 @@ docs/INSTALL_LOCAL.md
 docs/ROLLOUT_CHECKLIST.md
 docs/RUNNER.md
 docs/STUDIO_ADOPTION.md
+docs/STUDIO_API_PILOT.md
 docs/images/local-run.svg
 docs/images/local-setup.svg
 examples/java11-spring-vue3/STACK_NOTES.md
@@ -31,6 +32,7 @@ examples/runner/github-project.json
 examples/runner/local-issue.json
 examples/runner/local-project.json
 examples/runner/project.json
+examples/runner/studio-api-local.json
 plugins/sanakan/.codex-plugin/plugin.json
 plugins/sanakan/scripts/manage.py
 plugins/sanakan/skills/sanakan-manage/SKILL.md
@@ -60,6 +62,7 @@ templates/AGENTS.md
 templates/CODEOWNERS.example
 templates/automation/README.md
 templates/automation/prompts/implement.md
+templates/automation/prompts/report.md
 templates/automation/prompts/review.md
 templates/automation/prompts/triage.md
 templates/automation/publish-branch-and-mr.sh
@@ -81,6 +84,7 @@ tests/test_github.py
 tests/test_runner.py
 tests/test_service.py
 tests/test_stabilization.py
+tests/test_worker_handoff.py
 tools/build_plugin.py
 tools/build_release.py
 tools/validate_package.py

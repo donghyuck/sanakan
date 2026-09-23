@@ -219,7 +219,7 @@ class ArtifactTests(unittest.TestCase):
 
     def test_blocked_failed_no_change_rejected(self):
         self.reports()
-        for status in ("blocked", "failed", "no_change"):
+        for status in ("blocked", "failed", "no_change", "implemented"):
             self.data["implementation"]["status"] = status
             self.write_reports()
             self.gate(ok=False)

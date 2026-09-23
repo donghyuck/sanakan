@@ -1,3 +1,29 @@
+# Sanakan 1.7.0 studio-api 실제 로컬 적용
+
+- 원본 기준 c8457b601303338492431a3c60748d7a9e3996bd를 보존하고 지침 변경을 포함한 private snapshot에서 실제 Codex를 실행했다.
+- 초기 선택 문서 누락 차단, Worker timeout 및 Gradle sandbox 제약을 기록하고 원래 실패 결과를 보존했다.
+- 호스트 입력 우선순위와 implemented → 호스트 검증 → 읽기 전용 완료 보고 → 독립 리뷰 흐름을 보완했다.
+- BuiltInDocumentMetadataSchemaRegistryTest 10개 통과: failures=0, errors=0, skipped=0. 실제 Gradle 실행 21초.
+- 완료 보고 completed, review pass/blocking_count=0, 최종 gate ready를 확인했다.
+- patch SHA-256: f8643a978683c4ea820e905df00ea3b7fe135df2409bbcee7d49c06374def3da.
+- 원본에 반영한 단일 테스트 파일이 검증 checkout과 byte 단위로 일치한다. 업무 코드/서버/DB/원격은 변경하지 않았다.
+- Sanakan 회귀 테스트 88개 통과. 추가 gate 검사로 implemented 자체가 통과하지 않는지도 확인한다.
+- 실제 Docker, OS 계정 간 결과 전달, GitHub 게시/리뷰 요청은 이번 로컬 실증의 범위 밖이다.
+
+---
+
+# Sanakan 1.6.1 studio-api 적용 검토
+
+- 로컬/원격 3.x SHA c8457b601303338492431a3c60748d7a9e3996bd 일치 및 GitHub repository ID 1013485836을 읽기 전용으로 확인했다.
+- 원본의 기존 .omx 변경 4개를 보존하고 Sanakan checkout으로 별도 복제본을 만들었다.
+- Java 17 / Gradle 8.14.5 환경에서 offline/no-daemon/max-workers=1로 문서 메타데이터 선택 테스트를 실행했다.
+- BuiltInDocumentMetadataSchemaRegistryTest: tests=7, failures=0, errors=0, skipped=0. BUILD SUCCESSFUL, 3개 task 실행.
+- baseline.bundle은 12,433,045 bytes였다. 전체 결과 전달/별도 계정 실증을 대신하지 않는다.
+- 이번 결과는 기존 머신 캐시에 의존한다. 전체 모듈, DB/서버, Docker와 실제 GitHub 게시는 미검증이다.
+- 대상 프로젝트의 코드·지침·브랜치·원격 게시 변경은 하지 않았다. Sanakan 적용 문서와 설정 초안만 추가했다.
+
+---
+
 # Sanakan 1.6.0 GitHub 지원 검증
 
 검증일: 2026-09-22.

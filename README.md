@@ -1,6 +1,6 @@
 # Sanakan — Codex 에이전트 협업 자동화 코딩 도구
 
-**개발 버전 1.6.0 · 2026-09-22**
+**개발 버전 1.7.0 · 2026-09-22**
 
 Sanakan은 GitHub/GitLab 이슈를 받아 Codex 에이전트가 계획·개발·검증·독립 리뷰를 수행하고,
 Draft PR/MR을 생성해 사람에게 리뷰를 요청하는 도구를 개발하는 프로젝트입니다.
@@ -11,6 +11,9 @@ Draft PR/MR을 생성해 사람에게 리뷰를 요청하는 도구를 개발하
 - GitHub: [설정·사용 가이드](docs/GITHUB.md), [프로젝트 설정 예시](examples/runner/github-project.json)
 - GitLab: 기존 설정을 그대로 사용합니다. provider 생략 시 GitLab입니다.
 - 두 플랫폼 모두 Draft 유지, 리뷰 요청 확인, 형식 정책, 격리 실행·서명 전달 규칙을 적용합니다.
+
+실 프로젝트 적용 사례: [studio-api 적용 검토와 첫 실증 절차](docs/STUDIO_API_PILOT.md).
+지침 정정 후 실제 Codex로 테스트 3개를 보강했고 총 10개 검증과 독립 리뷰를 통과했습니다. Docker/GitHub 운영 실증은 남아 있습니다.
 
 ## 자동 개발 시작하기
 

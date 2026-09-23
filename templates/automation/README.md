@@ -57,6 +57,11 @@ HEAD가 달라졌거나 승인 범위 밖 파일이 변경되면 중단합니다
 
 ## 3. 독립 검증과 리뷰
 
+Sanakan 실행기의 Worker는 코드 작성 후 `implemented`로 인계할 수 있습니다.
+호스트의 독립 검증이 통과하면 읽기 전용 완료 보고 세션이 실제 증거로 `completed`를 보고하고
+그다음 독립 리뷰를 수행합니다. 원래의 미검증 보고는 implementation-draft.json으로 보존합니다.
+이 참조 gate는 implemented/미검증 상태 자체를 게시 가능 상태로 인정하지 않습니다.
+
 보호된 orchestrator가 승인 baseline의 깨끗한 별도 checkout에 `git apply --index /artifacts/change-001.patch`로 고정 patch를 적용합니다.
 적용 실패 시 중단합니다. verifier는 이 checkout에서 필수 검증을 실행합니다.
 Reviewer는 불변 patch 파일의 SHA-256을 직접 확인하고 이 checkout에서 호출 흐름을 읽습니다.

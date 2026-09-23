@@ -1,0 +1,47 @@
+{
+  "project_path": "donghyuck/studio-api",
+  "project_id": 1013485836,
+  "repo_path": "/path/to/studio-api",
+  "baseline": "c8457b601303338492431a3c60748d7a9e3996bd",
+  "target_branch": "3.x",
+  "allowed_author_ids": [
+    1
+  ],
+  "allowed_paths": [
+    "studio-platform-document-metadata/src/test/java/studio/one/platform/documentmetadata/BuiltInDocumentMetadataSchemaRegistryTest.java"
+  ],
+  "checks": [
+    {
+      "id": "document-metadata-unit",
+      "argv": [
+        "bash",
+        "./gradlew",
+        "--offline",
+        "--no-daemon",
+        "--console=plain",
+        "--max-workers=1",
+        ":studio-platform-document-metadata:test",
+        "--tests",
+        "*BuiltInDocumentMetadataSchemaRegistryTest"
+      ]
+    }
+  ],
+  "max_attempts": 1,
+  "timeout_seconds": 1200,
+  "max_patch_bytes": 1048576,
+  "expires_at": 0,
+  "publication": {
+    "branch": "feature/sanakan-{iid}",
+    "commit": "[ai-assisted] test(document-metadata): {title}\n\nIssue:\n- {issue_url}\nWhy:\n- 문서 메타데이터 경계값의 회귀를 방지한다.\nWhat:\n- {summary}\nValidation:\n{verification}",
+    "mr_title": "Draft: [ai-assisted] test(document-metadata): {title}",
+    "mr_body": "## Why\n\n문서 메타데이터 경계값의 회귀를 방지한다.\n\n## What\n\n{summary}\n\n{changed_files}\n\n## Related Issues\n\n{issue_url}\n\n## Validation\n\n{verification}\n\nBaseline: `{baseline}`\nPatch SHA-256: `{patch_sha256}`\n\n독립 리뷰: {review_summary}\n\n## Risk / Rollback\n\n{rollback}\n\n## AI / Subagent Usage\n\nAI-assisted: Yes\nSubagent used: No (메인·개발·리뷰는 별도 Codex CLI 세션)\nMain author validation: 위 독립 검증 결과 확인\n\n## Checklist\n\n- [ ] commit message follows policy\n- [ ] issue template used or exception recorded\n- [ ] validation recorded\n- [ ] CI / repository verification passed\n- [ ] human review completed before merge\n- [ ] no unrelated changes included\n"
+  },
+  "execution": {
+    "backend": "local"
+  },
+  "provider": "github",
+  "github_url": "https://github.com",
+  "reviewers": [
+    "reviewer-login"
+  ]
+}
